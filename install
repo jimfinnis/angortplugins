@@ -1,0 +1,5 @@
+#!/bin/bash
+
+DIR=/usr/local/share/angort
+mkdir -pv $DIR
+cp libs/*.angso $DIR

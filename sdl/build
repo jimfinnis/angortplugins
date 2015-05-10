@@ -1,0 +1,12 @@
+#!/bin/bash
+source ../base.sh
+makewords sdl
+
+g++ -fPIC -O3 -c -Wall `pkg-config sdl2 SDL2_image --cflags` sdl.plugin.cpp
+
+g++  -shared -Wl,-soname,sdl.angso \
+    -o ../libs/sdl.angso \
+    sdl.plugin.o\
+    `pkg-config sdl2 SDL2_image SDL2_ttf --libs` 
+    
+

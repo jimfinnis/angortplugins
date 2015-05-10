@@ -1,0 +1,11 @@
+#!/bin/bash
+source ../base.sh
+makewords mpc
+
+g++ -fPIC -g -c -Wall `pkg-config libmpdclient --cflags` mpc.plugin.cpp 
+
+g++ -shared -Wl,-soname,mpc.angso \
+    -o ../libs/mpc.angso \
+    mpc.plugin.o\
+    `pkg-config libmpdclient --libs`\
+

@@ -1,0 +1,10 @@
+#!/bin/sh
+
+for d in sys "time" mpc sdl midi io serial vector2d
+do
+    echo $d
+    cd $d
+    ./build
+    cd ..
+done
+

@@ -1,0 +1,13 @@
+#!/bin/bash
+source ../base.sh
+makewords midi
+
+
+g++ -fPIC -O3 -c -Wall midi.plugin.cpp
+
+g++  -shared -Wl,-soname,midi.angso \
+    -o ../libs/midi.angso \
+    midi.plugin.o\
+    -ljack
+    
+

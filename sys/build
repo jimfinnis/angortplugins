@@ -1,0 +1,12 @@
+#!/bin/bash
+source ../base.sh
+
+makewords sys
+
+
+g++ -fPIC -g -c -Wall sys.plugin.cpp 
+
+g++ -shared -Wl,-soname,sys.angso \
+    -o ../libs/sys.angso \
+    sys.plugin.o
+

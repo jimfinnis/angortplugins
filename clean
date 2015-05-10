@@ -1,0 +1,4 @@
+find . -name "*.plugin*" -exec rm {} \;
+find . -name "*~" -exec rm {} \;
+find . -name "words" -exec rm {} \;
+rm -rf libs 

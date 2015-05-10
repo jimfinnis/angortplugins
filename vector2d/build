@@ -1,0 +1,16 @@
+#!/bin/bash
+source ../base.sh
+
+makewords vector2d
+
+
+g++ -fPIC -O3 -c -Wall vector2d.plugin.cpp
+
+g++  -shared \
+    vector2d.plugin.o \
+    -Wl,-soname,vector2d.angso \
+    -o ../libs/vector2d.angso \
+    -Wl,--whole-archive -Wl,--no-whole-archive,-lm
+ 
+    
+

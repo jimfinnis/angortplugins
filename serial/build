@@ -1,0 +1,16 @@
+#!/bin/bash
+source ../base.sh
+
+makewords serial
+
+
+g++ -fPIC -O3 -c -Wall serial.plugin.cpp
+
+g++  -shared \
+    serial.plugin.o \
+    -Wl,-soname,serial.angso \
+    -o ../libs/serial.angso \
+    -Wl,--whole-archive -lrt -Wl,--no-whole-archive
+ 
+    
+

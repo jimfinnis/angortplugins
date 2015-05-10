@@ -1,0 +1,11 @@
+#!/bin/bash
+source ../base.sh
+
+makewords io
+
+g++ -fPIC -g -c -Wall io.plugin.cpp 
+
+g++ -shared -Wl,-soname,io.angso \
+    -o ../libs/io.angso \
+    io.plugin.o
+
