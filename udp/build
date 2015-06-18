@@ -1,0 +1,12 @@
+#!/bin/bash
+source ../base.sh
+
+makewords udp
+
+
+g++ -fPIC -g -c -Wall udp.plugin.cpp udpserver.cpp udpclient.cpp
+
+g++ -shared -Wl,-soname,udp.angso \
+    -o ../libs/udp.angso \
+    udp.plugin.o udpclient.o udpserver.o
+

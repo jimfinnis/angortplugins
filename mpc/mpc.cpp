@@ -330,6 +330,18 @@ void sendAddOfNameInHash(Value *v){
         conn.throwError();
 }
 
+%word seek (n t --) seek to position in song n in the list, in seconds
+{
+    Value *p[2];
+    a->popParams(p,"nn");
+    
+    conn.check();
+    if(!mpd_run_seek_pos(conn.mpd,p[0]->toInt(),p[1]->toInt()))
+        conn.throwError();
+}
+    
+    
+
 %word prev (--) move to previous item in queue
 {
     conn.check();
