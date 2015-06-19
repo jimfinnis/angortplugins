@@ -84,6 +84,7 @@ class MyUDPServerListener: public UDPServerListener {
     /// messages arrive as key=value pairs.
     virtual void onKeyValuePair(const char *s,float v){
         extern void setUDPProperty(const char *name,float val);
+        printf("RECEIVED %s=%f\n",s,v);
         setUDPProperty(s,v);
     }
 };
@@ -99,7 +100,7 @@ void setUDPProperty(const char *name,float val){
     throw Exception().set("cannot find UDP property %s",name);
 }
 
-%word handleudp (--) send and receive queued UDP data
+%word poll (--) send and receive queued UDP data
 {
     server.poll(); // check for incoming
     
@@ -110,7 +111,7 @@ void setUDPProperty(const char *name,float val){
 }
 
 
-%word addudpvar (name --) create a new global which mirrors the monitor
+%word addvar (name --) create a new global which mirrors the monitor
 {
     const StringBuffer& b = a->popString();
     a->registerProperty(b.get(),new UDPProperty(b.get()));
@@ -122,7 +123,7 @@ void setUDPProperty(const char *name,float val){
     hostName = strdup(b.get());
 }
 
-%word udpwrite (string --) write a string to the UDP port for the monitor
+%word write (string --) write a string to the UDP port for the monitor (13231)
 {
     const StringBuffer& b = a->popString();
     udpwrite(b.get());

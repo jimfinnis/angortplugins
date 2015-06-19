@@ -253,7 +253,40 @@ static void jack_shutdown(void *arg){
     p->write(data,3);
 }    
 
+static void stackPorts(Angort *a,const char **q){
+    Value *p = a->pushval();
+    ArrayList<Value> *lst=Types::tList->set(p);
+    
+    if(q){
+        for(;*q!=NULL;q++){
+            Value *v = lst->append();
+            Types::tString->set(v,*q);
+        }
+    }
+}
 
+%word inports (pattern -- ports) list input ports
+{
+    Value *p;
+    a->popParams(&p,"s");
+    chkjack();
+    
+    const char **q = jack_get_ports(jack,
+                                    p->isNone()?NULL:p->toString().get(),
+                                    NULL,JackPortIsInput);
+    stackPorts(a,q);
+}
+%word outports (pattern -- ports) list input ports
+{
+    Value *p;
+    a->popParams(&p,"s");
+    chkjack();
+    
+    const char **q = jack_get_ports(jack,
+                                    p->isNone()?NULL:p->toString().get(),
+                                    NULL,JackPortIsOutput);
+    stackPorts(a,q);
+}
 
 %init
 {
