@@ -48,6 +48,7 @@ public:
     
     MidiPort(bool input,const char *name){
         isInput = input;
+        pthread_mutex_init(&mutex,NULL);
         port = jack_port_register(jack,name,
                                   JACK_DEFAULT_MIDI_TYPE,
                                   isInput?JackPortIsInput:JackPortIsOutput,0);
@@ -74,6 +75,7 @@ public:
         if(port && jack)
             jack_port_unregister(jack,port);
         portList.remove(this);
+        pthread_mutex_destroy(&mutex);
     }
 };
 
@@ -239,7 +241,7 @@ static void jack_shutdown(void *arg){
     a->popParams(params,"nnna",&tMidiPort);
     int val = params[0]->toInt();
     int ctor = params[1]->toInt();
-    int chan = params[2]->toInt();
+    int chan = params[2]->toInt()-1; // channels start at 1.
     MidiPort *p = tMidiPort.get(params[3]);
     
     chkjack();
