@@ -380,7 +380,7 @@ static void stackPorts(Angort *a,const char **q){
     }
 }
 
-%word onnoteon (inport callable --) set a function of type (chan ctor val--) for noteon
+%word onnoteon (inport callable --) set a function of type (chan note vel--) for noteon
 {
     Value *p[2];
     a->popParams(p,"ac",&tMidiPort);
@@ -388,6 +388,24 @@ static void stackPorts(Angort *a,const char **q){
     if(!port->isInput)
         throw RUNT("cannot set event on output port");
     port->onNoteOn.copy(p[1]);
+}
+%word onnoteoff (inport callable --) set a function of type (chan note vel--) for noteoff
+{
+    Value *p[2];
+    a->popParams(p,"ac",&tMidiPort);
+    MidiPort *port = tMidiPort.get(p[0]);
+    if(!port->isInput)
+        throw RUNT("cannot set event on output port");
+    port->onNoteOff.copy(p[1]);
+}
+%word oncc (inport callable --) set a function of type (chan ctor val--) for CC
+{
+    Value *p[2];
+    a->popParams(p,"ac",&tMidiPort);
+    MidiPort *port = tMidiPort.get(p[0]);
+    if(!port->isInput)
+        throw RUNT("cannot set event on output port");
+    port->onCC.copy(p[1]);
 }
 
 
