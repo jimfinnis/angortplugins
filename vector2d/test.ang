@@ -1,1 +1,92 @@
 "../libs/vector2d" library import
+[`sdl,`time] each {i library drop}
+"foo" 600 600 sdl$open
+"/usr/share/fonts/truetype/droid/DroidSans.ttf"
+20 sdl$openfont !Font
+:drawtext |t,x,y:|
+    ?t tostr ?Font sdl$maketext !t
+    ?x ?y none none ?t sdl$blit
+;
+    
+
+3.1415927 const pi
+none srand 
+:frand rand 32768 % 32768.0 /;
+
+
+:s
+    sdl$scrsize vec 0.5 vsmul add
+;
+
+:vecline |a,b:|
+    ?a s xy ?b s xy sdl$line
+;
+
+:mkcourse |startv,endv:|
+    [%
+     `startv ?startv,
+     `endv ?endv,
+     `draw (?startv ?endv vecline),
+     `tostr (?startv tostr "," + ?endv tostr +)
+     ]
+;
+
+0 0 vec !Point
+:randcourse
+    rand 100 % 50 -
+    rand 100 % 50 - vec
+    dup
+    0 300 vec frand 2 pi * * mkrotate xform
+    add
+    mkcourse dup ?`tostr@.
+;
+
+:getscorevec |c,p:s2p,s2e|
+    # get the whole course from start to finish
+    ?c?`endv ?c?`startv sub !s2e
+    # build a mat to rotate into the space where y=course
+    ?c?`startv ?s2e makebasis
+    # and transform by this matrix
+    ?Point swap dup mdump
+    xform 
+;    
+
+randcourse !Course
+
+(|k:|
+    ?k chr
+    <<[%
+       "h" (?Point -1 0 vec add !Point),
+       "l" (?Point 1 0 vec add !Point),
+       "j" (?Point 0 1 vec add !Point),
+       "k" (?Point 0 -1 vec add !Point),
+       "q" (sdl$done)
+       ]>> get call
+) sdl$onkeydown
+
+:cross|v:x,y|
+    ?v s xy !y !x
+    ?x 10 - ?y ?x 10 + ?y sdl$line
+    ?x ?y 10 - ?x ?y 10 + sdl$line
+;
+    
+:draw |:x,y|
+    ?Course?`draw@
+    ?Point cross
+    
+    ?Course ?Point getscorevec  xy !y !x
+    "dist=" ?y + ", side=" + ?x + 20 20 drawtext
+    
+    "course=" ?Course?`tostr@ + 20 50 drawtext
+    "point=" ?Point tostr + 20 80 drawtext
+;
+
+(
+    sdl$clear
+    draw
+    0.02 time$delay
+    sdl$flip
+) sdl$ondraw
+
+sdl$loop quit
+    
