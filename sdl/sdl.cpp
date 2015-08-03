@@ -10,6 +10,7 @@
 #include <SDL2/SDL_video.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
+#include <SDL2/SDL2_gfxPrimitives.h>
 #include <angort/angort.h>
 
 using namespace angort;
@@ -372,6 +373,20 @@ static void openwindow(const char *title, int w,int h,int flags){
     }
 }
 
+%wordargs aacircle nnn (x y radius --)
+{
+    aacircleRGBA(renderer,p0,p1,p2,
+                 forecol.col.r,forecol.col.g,
+                 forecol.col.b,forecol.col.a);
+}
+
+%wordargs filledcircle nnn (x y radius --)
+{
+    filledCircleRGBA(renderer,p0,p1,p2,
+                 forecol.col.r,forecol.col.g,
+                 forecol.col.b,forecol.col.a);
+}
+
 
 // various callbacks, all initially "none"
 Value onKeyDown;
@@ -479,6 +494,8 @@ int keyMod = 0;
     }
     done = false; // reset the done flag
 }
+
+
 
 %word done (--) set the done flag to end the main loop
 {

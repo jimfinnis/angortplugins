@@ -35,7 +35,7 @@ public:
 class Vector2DType : public GCType {
 public:
     Vector2DType(){
-        add("vector2D","VC2D");
+        add("vec2d","VC2D");
     }
     virtual ~Vector2DType(){};
     
@@ -72,7 +72,7 @@ class Matrix3x3Type : public GCType {
 public:
     virtual ~Matrix3x3Type(){};
     Matrix3x3Type(){
-        add("Matrix3x3","MT33");
+        add("mat3x3","MT33");
     }
     
     Matrix3x3 *get(Value *v){
@@ -108,24 +108,6 @@ static Vector2DType tV2;
     tV2.set(a->pushval(),v);
 }
 
-%word add (v v -- v) vector addition
-{
-    Value *p[2];
-    a->popParams(p,"AA",&tV2);
-    Vector2D *m = tV2.get(p[0]);
-    Vector2D *n = tV2.get(p[1]);
-    tV2.set(a->pushval(),*m + *n);
-}
-
-%word sub (v v -- v) vector subtraction
-{
-    Value *p[2];
-    a->popParams(p,"AA",&tV2);
-    Vector2D *m = tV2.get(p[0]);
-    Vector2D *n = tV2.get(p[1]);
-    tV2.set(a->pushval(),*m - *n);
-}
-
 %word vneg (v -- v) vector negation
 {
     Value *p;
@@ -133,8 +115,6 @@ static Vector2DType tV2;
     Vector2D *v = tV2.get(p);
     tV2.set(a->pushval(),- *v);
 }
-
-
 
 %word dot (v v -- v) dot product
 {
@@ -160,16 +140,6 @@ static Vector2DType tV2;
     Vector2D *v = tV2.get(p);
     Types::tFloat->set(a->pushval(),v->x);
     Types::tFloat->set(a->pushval(),v->y);
-}
-
-%word vsmul (v s -- v) vector scalar multiply
-{
-    Value *p[2];
-    a->popParams(p,"An",&tV2);
-    Vector2D *m = tV2.get(p[0]);
-    double n = p[1]->toFloat();
-    
-    tV2.set(a->pushval(),*m * n);
 }
 
 %wordargs angle A|vec (v -- n) get angle from Y axis
@@ -215,16 +185,26 @@ static Vector2DType tV2;
     tM33.set(a->pushval(),&m);
 }
 
-%wordargs mmul AA|mat (m m -- m) matrix multiply
+%binop mat3x3 mul mat3x3
 {
+    Matrix3x3 *p = tM33.get(lhs);
+    Matrix3x3 *q = tM33.get(rhs);
     Matrix3x3 m;
-    m.mul(*p0,*p1);
+    
+    m.mul(*p,*q);
     tM33.set(a->pushval(),&m);
 }
-
+    
 %wordargs xform AB|vec,mat (vec mat -- vec) matrix transform
 {
     tV2.set(a->pushval(),p1->transform(*p0));
+}
+
+%binop vec2d mul mat3x3
+{
+    Vector2D *v = tV2.get(lhs);
+    Matrix3x3 *m = tM33.get(rhs);
+    tV2.set(a->pushval(),m->transform(*v));
 }
 
 %wordargs translate AB|mat,vec (m v -- m) matrix translate
@@ -238,3 +218,35 @@ static Vector2DType tV2;
 {
     p0->dump();
 }
+
+
+%binop vec2d add vec2d
+{
+    Vector2D *m = tV2.get(lhs);
+    Vector2D *n = tV2.get(rhs);
+    tV2.set(a->pushval(),*m + *n);
+}
+    
+%binop vec2d sub vec2d
+{
+    Vector2D *m = tV2.get(lhs);
+    Vector2D *n = tV2.get(rhs);
+    tV2.set(a->pushval(),*m - *n);
+}
+    
+%binop vec2d mul number
+{
+    Vector2D *m = tV2.get(lhs);
+    double n = rhs->toFloat();
+    
+    tV2.set(a->pushval(),*m * n);
+}
+
+%binop number mul vec2d
+{
+    Vector2D *m = tV2.get(rhs);
+    double n = lhs->toFloat();
+    
+    tV2.set(a->pushval(),*m * n);
+}
+

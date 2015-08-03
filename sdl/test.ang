@@ -1,5 +1,5 @@
-#../libs/sdl" library import
-`sdl library import
+"../libs/sdl" library import
+#`sdl library import
 
 -1 !autogc # turn off major GC
 
@@ -48,7 +48,9 @@ PI 2 * const TWOPI
 (dup x nl "q" asc = if done then) onkeydown
 (
     clear
-    ?Thingies each { i?`move@ i?`draw@ }
+#    ?Thingies each { i?`move@ i?`draw@ }
+    300 300 30 aacircle
+    300 300 20 filledcircle
     flip
 ) ondraw
 

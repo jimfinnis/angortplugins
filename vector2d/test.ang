@@ -15,7 +15,7 @@ none srand
 
 
 :s
-    sdl$scrsize vec 0.5 vsmul add
+    sdl$scrsize vec 0.5 vsmul +
 ;
 
 :vecline |a,b:|
@@ -36,8 +36,7 @@ none srand
     rand 100 % 50 -
     rand 100 % 50 - vec
     dup
-    0 300 vec frand 2 pi * * mkrotate xform
-    add
+    0 300 vec frand 2 pi * * mkrotate xform +
     mkcourse dup ?`tostr@.
 ;
 
@@ -56,10 +55,10 @@ randcourse !Course
 (|k:|
     ?k chr
     <<[%
-       "h" (?Point -1 0 vec add !Point),
-       "l" (?Point 1 0 vec add !Point),
-       "j" (?Point 0 1 vec add !Point),
-       "k" (?Point 0 -1 vec add !Point),
+       "h" (?Point -1 0 vec + !Point),
+       "l" (?Point 1 0 vec + !Point),
+       "j" (?Point 0 1 vec + !Point),
+       "k" (?Point 0 -1 vec + !Point),
        "q" (sdl$done)
        ]>> get call
 ) sdl$onkeydown
