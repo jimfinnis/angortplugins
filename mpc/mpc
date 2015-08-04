@@ -317,6 +317,25 @@ global list # force a new definition in this namespace
     }
 ;
 
+:savefile |n:f|
+    :"(n --) save list to local file (preserves play position)"
+    ?n "w" io$open !f
+    mpc$stat ?`pos ?f io$write
+    mpc$list ?f io$write
+;
+
+:loadfile |n:f,p,l|
+    :"(n --) save list from local file (preserves play position)"
+    ?n "r" io$open !f
+    ?f io$read32 !p
+    "Playlist position: "p ?p .
+    ?f io$readlist !l
+    "Adding "p ?l len " items.".
+    ?l mpc$add
+    ?p 0 mpc$seek
+;
+    
+
 
 :srt
     :"(list -- list) sort list by album, then track"
@@ -327,6 +346,7 @@ global list # force a new definition in this namespace
     :"(--) sort playlist by album, then track"
     mpc$list dup (mpcc$sortFunc) fsort clr add
 ;
+
 
 endpackage import
 
