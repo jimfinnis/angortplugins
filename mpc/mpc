@@ -318,24 +318,36 @@ global list # force a new definition in this namespace
 ;
 
 :savefile |n:f|
-    :"(n --) save list to local file (preserves play position)"
+    :"(n --) save queue to local file (preserves play position)"
     ?n "w" io$open !f
     mpc$stat ?`pos ?f io$write
     mpc$list ?f io$write
 ;
 
-:loadfile |n:f,p,l|
-    :"(n --) save list from local file (preserves play position)"
+:addfile |n:f,p,l|
+    :"(n --) append list from local file to queue"
     ?n "r" io$open !f
+    ?f isnone if "Cannot open file "p ?n. stop then
     ?f io$read32 !p
-    "Playlist position: "p ?p .
+    "Playlist position: " std$p ?p .
     ?f io$readlist !l
-    "Adding "p ?l len " items.".
+    "Adding " std$p ?l len std$p " items.".
+    ?l mpc$add
+    # don't seek, play number will be wrong
+;
+    
+:loadfile |n:f|
+    :"(n --) load queue from local file (preserves play position)"
+    clr
+    ?n "r" io$open !f
+    ?f isnone if "Cannot open file " std$p ?n. stop then
+    ?f io$read32 !p
+    "Playlist position: " std$p ?p .
+    ?f io$readlist !l
+    "Adding " std$p ?l len std$p " items.".
     ?l mpc$add
     ?p 0 mpc$seek
 ;
-    
-
 
 :srt
     :"(list -- list) sort list by album, then track"
