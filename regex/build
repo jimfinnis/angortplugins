@@ -1,0 +1,11 @@
+#!/bin/bash
+source ../base.sh
+
+makewords regex
+
+g++ -fPIC -g -c -Wall regex.plugin.cpp 
+
+g++ -shared -Wl,-soname,regex.angso \
+    -o ../libs/regex.angso \
+    regex.plugin.o
+

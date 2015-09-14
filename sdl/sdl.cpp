@@ -380,9 +380,24 @@ static void openwindow(const char *title, int w,int h,int flags){
                  forecol.col.b,forecol.col.a);
 }
 
+%wordargs aaellipse nnnn (x y xr yr --)
+{
+    aaellipseRGBA(renderer,p0,p1,p2,p3,
+                 forecol.col.r,forecol.col.g,
+                 forecol.col.b,forecol.col.a);
+}
+
+
 %wordargs filledcircle nnn (x y radius --)
 {
     filledCircleRGBA(renderer,p0,p1,p2,
+                 forecol.col.r,forecol.col.g,
+                 forecol.col.b,forecol.col.a);
+}
+
+%wordargs filledellipse nnnn (x y xr yr --)
+{
+    filledEllipseRGBA(renderer,p0,p1,p2,p3,
                  forecol.col.r,forecol.col.g,
                  forecol.col.b,forecol.col.a);
 }

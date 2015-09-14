@@ -174,7 +174,7 @@ static Vector2DType tV2;
 %wordargs mkscale nn (x y -- m) construct scaling matrix
 {
     Matrix3x3 m;
-    m.makeTranslate(p0,p1);
+    m.makeScale(p0,p1);
     tM33.set(a->pushval(),&m);
 }    
 
@@ -214,9 +214,26 @@ static Vector2DType tV2;
     tM33.set(a->pushval(),&m);
 }
 
+%wordargs mget nnA|mat (r c m --) get element of matrix
+{
+    double *p = &(p2->m00);
+    int idx = p1+3*p0;
+    if(idx<0 || idx>8)
+        a->pushNone();
+    else
+        a->pushFloat(p[idx]);
+}
+
 %wordargs mdump A|mat (m --) dump matrix to stdout
 {
     p0->dump();
+}
+
+%wordargs zerotranslate A|mat (m -- m) zero the translate elements of a matrix
+{
+    Matrix3x3 m = *p0;
+    m.m20=0;m.m21=0;m.m22=1;
+    tM33.set(a->pushval(),&m);
 }
 
 
