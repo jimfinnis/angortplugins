@@ -2,7 +2,9 @@
 
 package mpcc
 
-[`mpc,`id3,`io] each { i library drop}
+[`sys,`mpc,`id3,`io] each { i library drop}
+
+"HOME" sys$getenv !Home
 
 :connect
     none 0 mpc$connect;
@@ -115,8 +117,6 @@ private
     then
 ;
 
-        
-        
     
         
     
@@ -125,6 +125,13 @@ private
 
 public
 
+:timestr |s:m|
+    ?s toint !s
+    ?s 60 / !m
+    ?s 60 % !s
+    [?m,?s] "%02d:%02d" format
+;
+        
 :getlist
     :"(-- list) get the current playlist"
     mpc$list dup each{i addstrconv};
@@ -205,10 +212,12 @@ global list # force a new definition in this namespace
     "State : " ?stat?`state +
     "  Volume : " ?stat?`volume + +.
     ?stat?`pos 0 < not if
-        ?stat?`pos ?list get dup
-        "Current Song: " std$p ?`title.
-        "              " std$p ?`artist.
-        ?stat?`elapsed "/" ?stat?`total + + .
+        ?stat?`pos ?list get
+        "Current Song: " std$p dup ?`title.
+        "by            " std$p dup ?`artist.
+        "from          " std$p ?`album.
+        "at            " std$p 
+        ?stat?`elapsed timestr "/" ?stat?`total timestr + + .
     then
 ;
 
@@ -281,7 +290,8 @@ global list # force a new definition in this namespace
 
 :getfn 
     :"(hash -- file) get full name (only works on local machine)"
-    "/home/white/beetsmusic/" swap ?`name +
+    ?Home "/beetsmusic/" +
+    swap ?`name +
 ;
 
 :loadtags
@@ -349,6 +359,20 @@ global list # force a new definition in this namespace
     ?p 0 mpc$seek
 ;
 
+:save
+    :"(--) shortcut to save playlist and pos"
+    ?Home "/.angortmplist" + savefile
+    
+;
+
+:load
+    :"(--) shortcut to save playlist and pos"
+    ?Home "/.angortmplist" + loadfile
+;
+    
+    
+
+
 :srt
     :"(list -- list) sort list by album, then track"
     clone dup (mpcc$sortFunc) fsort
@@ -359,7 +383,11 @@ global list # force a new definition in this namespace
     mpc$list dup (mpcc$sortFunc) fsort clr add
 ;
 
+# add words here for your standard connections
+:pi "pi" 0 mpc$connect;
+:cran "cranberry" 0 mpc$connect;
 
 endpackage import
 
-connect
+# add your default connect here
+pi
