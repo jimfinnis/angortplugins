@@ -86,11 +86,12 @@ static RegexType tR;
     Value v;
     ArrayList<Value> *list = Types::tList->set(&v);
     int off=0;
-    
+    int flags = 0;
     for(;;){
-        int rv = regexec(p1->r,p0+off,1,&match,0); // no flags
+        int rv = regexec(p1->r,p0+off,1,&match,flags);
         if(rv == REG_NOMATCH)
             break;
+        flags=REG_NOTBOL;
         Value *v = list->append();
         ArrayList<Value> *pair = Types::tList->set(v);
         Types::tInteger->set(pair->append(),match.rm_so+off);
@@ -110,10 +111,12 @@ static RegexType tR;
     bool hadMatches;
     int newlen = subjlen;
     int off=0;
+    int flags = 0;
     for(;;){
-        int rv = regexec(p2->r,p0+off,1,&match,0); // no flags
+        int rv = regexec(p2->r,p0+off,1,&match,flags);
         if(rv==REG_NOMATCH)
             break;
+        flags=REG_NOTBOL;
         hadMatches = true;
         int start = match.rm_so;
         int end = match.rm_eo;
@@ -130,11 +133,13 @@ static RegexType tR;
     
     int inoffset=0;
     int outoffset=0;
+    flags = 0;
     if(hadMatches){ // skip if no matches in first pass
         for(;;){
-            int rv = regexec(p2->r,p0+inoffset,1,&match,0); // no flags
+            int rv = regexec(p2->r,p0+inoffset,1,&match,flags);
             if(rv==REG_NOMATCH)
                 break;
+            flags=REG_NOTBOL;
             int start = match.rm_so;
             int end = match.rm_eo;
             int len = end-start;
@@ -167,11 +172,12 @@ static RegexType tR;
     char *s;
     ArrayList<Value> *list = Types::tList->set(&v);
     int off=0;
-    
+    int flags = 0;
     for(;;){
-        int rv = regexec(p1->r,p0+off,1,&match,0); // no flags
+        int rv = regexec(p1->r,p0+off,1,&match,flags);
         if(rv == REG_NOMATCH)
             break;
+        flags=REG_NOTBOL;
         v2 = list->append();
         s = Types::tString->allocate(v2,match.rm_so+1,Types::tString);
         memcpy(s,p0+off,match.rm_so);

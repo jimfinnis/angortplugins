@@ -22,6 +22,15 @@ using namespace angort;
     usleep((int)(p->toFloat()*1.0e6f));
 }
 
+%wordargs getenv s (name -- str or none)
+{
+    const char *s = getenv(p0);
+    if(s)
+        a->pushString(s);
+    else
+        a->pushNone();
+}
+
 %init
 {
     fprintf(stderr,"Initialising SYS plugin, %s %s\n",__DATE__,__TIME__);
