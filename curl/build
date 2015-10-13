@@ -1,0 +1,12 @@
+#!/bin/bash
+source ../base.sh
+makewords curl
+
+g++ -fPIC -O3 -c -Wall curl.plugin.cpp
+
+g++  -shared -Wl,-soname,curl.angso \
+    -o ../libs/curl.angso \
+    curl.plugin.o\
+    -lcurl
+    
+

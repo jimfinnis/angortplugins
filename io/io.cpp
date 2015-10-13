@@ -429,13 +429,6 @@ static void doreadhash(FILE *f,Value *res){
     fflush(f);
 }
 
-inline void setIntInHash(Hash *h, const char *key,uint32_t value){
-    Value k,v;
-    Types::tString->set(&k,key);
-    Types::tInteger->set(&v,(int)value);
-    h->set(&k,&v);
-}
-
 %word stat (path -- hash/none) read the file statistics, or none if not found
 {
     Value *p;
@@ -447,13 +440,13 @@ inline void setIntInHash(Hash *h, const char *key,uint32_t value){
     if(stat(p->toString().get(),&b)==0){
         Hash *h = Types::tHash->set(res);
         
-        setIntInHash(h,"mode",b.st_mode);
-        setIntInHash(h,"uid",b.st_uid);
-        setIntInHash(h,"gid",b.st_gid);
-        setIntInHash(h,"size",b.st_size);
-        setIntInHash(h,"atime",b.st_atime);
-        setIntInHash(h,"mtime",b.st_mtime);
-        setIntInHash(h,"ctime",b.st_ctime);
+        h->setSymInt("mode",b.st_mode);
+        h->setSymInt("uid",b.st_uid);
+        h->setSymInt("gid",b.st_gid);
+        h->setSymInt("size",b.st_size);
+        h->setSymInt("atime",b.st_atime);
+        h->setSymInt("mtime",b.st_mtime);
+        h->setSymInt("ctime",b.st_ctime);
     } else
         res->clr();
 }

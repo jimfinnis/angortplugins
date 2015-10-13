@@ -1,0 +1,5 @@
+curl$make
+[%
+ `url "http://pale.org/rainbow.php"
+] curl$setopt
+dup curl$perform
