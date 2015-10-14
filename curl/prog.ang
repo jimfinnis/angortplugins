@@ -1,0 +1,40 @@
+"../libs/curl" library drop
+
+"http://cranberry.pale.org/~white/prog.php" !URL
+
+# Call this at the start of a set of experiments to send
+# the axis definitions for a session and clear the flags.
+# Each axis definition is a list of possible values along that axis.
+
+:senddata |session,axis1,axis2:|
+    curl$make
+    [%`url ?URL,
+     `postfields [%`sessionset ?session,
+                  `axis1 ?axis1 ":" intercalate,
+                  `axis2 ?axis2 ":" intercalate
+                  ] curl$args dup.
+     ] curl$setopt
+    dup curl$perform drop
+    curl$data.
+;
+
+# Either call this to send a message that something has completed or
+# send a ?session=N&axis1=foo&axis2=bar message to the URL
+
+:update |session,a1,a2:|
+    curl$make
+    [%`url ?URL,
+     `postfields [%`session ?session,
+                  `axis1 ?a1,
+                  `axis2 ?a2
+                  ] curl$args
+     ] curl$setopt
+    dup curl$perform drop
+    curl$data.
+;
+
+:resetprog
+    0 [`foo,`bar,`baz,`quz] [1,2,3,4] senddata;
+:setprog
+    0 `baz 2 update;
+
