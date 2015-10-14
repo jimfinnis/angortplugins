@@ -13,6 +13,9 @@
   .notdone {
     background-color: #ff5050;
   }    
+  .started {
+    background-color: #5050ff;
+  }    
   </style>
 </head>
 
@@ -50,10 +53,13 @@ if(isset($_POST['sessionset'])){
   if(isset($_POST['axis1'])){
     $axis1 = $_POST['axis1'];
     $axis2 = $_POST['axis2'];
-    $st = $db->prepare('insert into done(session,value1,value2) values(:sess,:v1,:v2)');
-    $st->bindValue(':sess',$sess,SQLITE3_TEXT);
+    $stat = $_POST['status'];
+    print $stat;
+    $st = $db->prepare('replace into done(session,value1,value2,status) values(:sess,:v1,:v2,:stat)');
+    $st->bindValue(':sess',$sess,SQLITE3_INTEGER);
     $st->bindValue(':v1',$axis1,SQLITE3_TEXT);
     $st->bindValue(':v2',$axis2,SQLITE3_TEXT);
+    $st->bindValue(':stat',$stat,SQLITE3_INTEGER);
     $st->execute();
   } 
   
@@ -91,7 +97,13 @@ if(isset($_POST['sessionset'])){
       $st->bindValue(':v2',$a2,SQLITE3_TEXT);
       $r = $st->execute();
       $filled = ($row = $r->fetchArray());
-      $class = $filled ? "done" : "notdone";
+      $stat=0;
+      if(!$filled)$class="notdone";
+      else {
+        $stat = intval($row['status']);
+        if($stat == 1)$class="started";
+        else $class="done";
+      }
       print "<td class=\"$class\"/>";
       $st->reset();
     }
