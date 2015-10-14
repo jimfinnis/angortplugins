@@ -58,7 +58,7 @@ size_t writefunc(void *buffer, size_t size, size_t nmemb, void *userp){
     CurlWrapper *c = (CurlWrapper *)userp;
     
     size_t s = size*nmemb;
-    if(c->len+s+1>c->maxsize){
+    while(c->len+s+1>c->maxsize){
         c->maxsize+=1024;
         c->data=(char *)realloc(c->data,c->maxsize);
     }
