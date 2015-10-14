@@ -21,8 +21,12 @@
 
 <body>
 <?php
+define("DBUSER","prog");
+define("DBPASS","prog");
 
-$db = new SQLite3("/home/white/prog/foo.db");
+$db = new PDO("mysql:host=localhost;dbname=prog",DBUSER,DBPASS);
+$db->setAttribute(PDO::ATTR_ERRMODE,PDO::ERRMODE_WARNING);
+
 if(isset($_POST['sessionset'])){
   $sess = intval($_POST['sessionset']);
   print "sess $sess";
@@ -38,16 +42,17 @@ if(isset($_POST['sessionset'])){
   
   foreach($axis1 as $a){
     $st = $db->prepare("insert into axes(session,value,axis) values(:sess,:val,1)");
-    $st->bindValue(':sess',$sess,SQLITE3_INTEGER);
-    $st->bindValue(':val',$a,SQLITE3_TEXT);
+    $st->bindValue(':sess',$sess,PDO::PARAM_INT);
+    $st->bindValue(':val',$a,PDO::PARAM_STR);
     $st->execute();
   }
   foreach($axis2 as $a){
     $st = $db->prepare("insert into axes(session,value,axis) values(:sess,:val,2)");
-    $st->bindValue(':sess',$sess,SQLITE3_INTEGER);
-    $st->bindValue(':val',$a,SQLITE3_TEXT);
+    $st->bindValue(':sess',$sess,PDO::PARAM_INT);
+    $st->bindValue(':val',$a,PDO::PARAM_STR);
     $st->execute();
   }
+  print "DONE";
 } else {
   $sess = intval($_GET["session"]);
   if(isset($_POST['axis1'])){
@@ -56,30 +61,29 @@ if(isset($_POST['sessionset'])){
     $stat = $_POST['status'];
     print $stat;
     $st = $db->prepare('replace into done(session,value1,value2,status) values(:sess,:v1,:v2,:stat)');
-    $st->bindValue(':sess',$sess,SQLITE3_INTEGER);
-    $st->bindValue(':v1',$axis1,SQLITE3_TEXT);
-    $st->bindValue(':v2',$axis2,SQLITE3_TEXT);
-    $st->bindValue(':stat',$stat,SQLITE3_INTEGER);
-    $st->execute();
+    $st->bindValue(':sess',$sess,PDO::PARAM_INT);
+    $st->bindValue(':v1',$axis1,PDO::PARAM_STR);
+    $st->bindValue(':v2',$axis2,PDO::PARAM_STR);
+    $st->bindValue(':stat',$stat,PDO::PARAM_INT);
+    if(!$st->execute())print("FAILD");
   } 
   
   $axis1vals = array();
   $axis2vals = array();
   
   $st = $db->prepare("select * from axes where axis=:ax and session=:sess");
-  $st->bindValue(':ax',1);
-  $st->bindValue(':sess',$sess);
-  $r=$st->execute();
+  $st->bindValue(':ax',1,PDO::PARAM_INT);
+  $st->bindValue(':sess',$sess,PDO::PARAM_INT);
+  $st->execute();
   print "<h1>Session $sess</h1>";
-  while($row = $r->fetchArray()){
-    $axis1vals[] = $row['value'];
+  while($row = $st->fetchObject()){
+    $axis1vals[] = $row->value;
   }
-  $st->reset();
   $st->bindValue(':ax',2);
   $st->bindValue(':sess',$sess);
-  $r=$st->execute();
-  while($row = $r->fetchArray()){
-    $axis2vals[] = $row['value'];
+  $st->execute();
+  while($row = $st->fetchObject()){
+    $axis2vals[] = $row->value;
   }
   print "<table>";
   # output col names
@@ -89,27 +93,34 @@ if(isset($_POST['sessionset'])){
   }
   print "</tr>\n";
   $st = $db->prepare("select * from done where session=:sess and value1=:v1 and value2=:v2");
-  $st->bindValue(':sess',$sess,SQLITE3_INTEGER);
+  $st->bindValue(':sess',$sess,PDO::PARAM_INT);
+  $started=0;
+  $done=0;
   foreach($axis1vals as $a1){
     print "<tr><th>$a1</th>";
     foreach($axis2vals as $a2){
-      $st->bindValue(':v1',$a1,SQLITE3_TEXT);
-      $st->bindValue(':v2',$a2,SQLITE3_TEXT);
-      $r = $st->execute();
-      $filled = ($row = $r->fetchArray());
+      $st->bindValue(':v1',$a1,PDO::PARAM_STR);
+      $st->bindValue(':v2',$a2,PDO::PARAM_STR);
+      $st->execute();
+      $filled = ($row = $st->fetchObject());
       $stat=0;
       if(!$filled)$class="notdone";
       else {
-        $stat = intval($row['status']);
-        if($stat == 1)$class="started";
-        else $class="done";
+        $stat = intval($row->status);
+        if($stat == 1){
+          $class="started";
+          $started++;
+        }else{
+          $class="done";
+          $done++;
+        }
       }
       print "<td class=\"$class\"/>";
-      $st->reset();
     }
     print "</tr>\n";
   }
   print "</table>";
+  print "<p>Started: $started, done: $done</p>";
 }
 
 
