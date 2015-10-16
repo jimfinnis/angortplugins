@@ -1,11 +1,11 @@
 create table axes (
-    session int not null,
+    session char(128) not null,
     value char(128) not null,
     axis int not null
     );
     
 create table done (
-    session int,
+    session char(128) not null,
     value1 char(128) not null,
     value2 char(128) not null,
     status int,

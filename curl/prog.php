@@ -1,5 +1,9 @@
 <head>
+  <meta http-equiv="refresh" content="30"/>
   <style>
+  body {
+  font-family: sans-serif;
+  }
   table,th,td {
   border: 1px solid black;
   border-collapse: collapse;
@@ -28,7 +32,7 @@ $db = new PDO("mysql:host=localhost;dbname=prog",DBUSER,DBPASS);
 $db->setAttribute(PDO::ATTR_ERRMODE,PDO::ERRMODE_WARNING);
 
 if(isset($_POST['sessionset'])){
-  $sess = intval($_POST['sessionset']);
+  $sess = $_POST['sessionset'];
   print "sess $sess";
   $axis1 = split(":",$_POST['axis1']);
   $axis2 = split(":",$_POST['axis2']);
@@ -42,30 +46,34 @@ if(isset($_POST['sessionset'])){
   
   foreach($axis1 as $a){
     $st = $db->prepare("insert into axes(session,value,axis) values(:sess,:val,1)");
-    $st->bindValue(':sess',$sess,PDO::PARAM_INT);
+    $st->bindValue(':sess',$sess,PDO::PARAM_STR);
     $st->bindValue(':val',$a,PDO::PARAM_STR);
     $st->execute();
   }
   foreach($axis2 as $a){
     $st = $db->prepare("insert into axes(session,value,axis) values(:sess,:val,2)");
-    $st->bindValue(':sess',$sess,PDO::PARAM_INT);
+    $st->bindValue(':sess',$sess,PDO::PARAM_STR);
     $st->bindValue(':val',$a,PDO::PARAM_STR);
     $st->execute();
   }
   print "DONE";
 } else {
-  $sess = intval($_GET["session"]);
+  $sess = $_GET["session"];
   if(isset($_POST['axis1'])){
+    $sess = $_POST["session"]; // post overrides get. 
     $axis1 = $_POST['axis1'];
     $axis2 = $_POST['axis2'];
     $stat = $_POST['status'];
     print $stat;
     $st = $db->prepare('replace into done(session,value1,value2,status) values(:sess,:v1,:v2,:stat)');
-    $st->bindValue(':sess',$sess,PDO::PARAM_INT);
+    $st->bindValue(':sess',$sess,PDO::PARAM_STR);
     $st->bindValue(':v1',$axis1,PDO::PARAM_STR);
     $st->bindValue(':v2',$axis2,PDO::PARAM_STR);
     $st->bindValue(':stat',$stat,PDO::PARAM_INT);
-    if(!$st->execute())print("FAILD");
+    if(!$st->execute()){
+      print("FAILED $sess\n");
+      print_r($st->errorInfo());
+    }
   } 
   
   $axis1vals = array();
@@ -73,9 +81,11 @@ if(isset($_POST['sessionset'])){
   
   $st = $db->prepare("select * from axes where axis=:ax and session=:sess");
   $st->bindValue(':ax',1,PDO::PARAM_INT);
-  $st->bindValue(':sess',$sess,PDO::PARAM_INT);
+  $st->bindValue(':sess',$sess,PDO::PARAM_STR);
   $st->execute();
   print "<h1>Session $sess</h1>";
+  $date = date('r');
+  print "<h2>$date</h2>";
   while($row = $st->fetchObject()){
     $axis1vals[] = $row->value;
   }
@@ -93,7 +103,7 @@ if(isset($_POST['sessionset'])){
   }
   print "</tr>\n";
   $st = $db->prepare("select * from done where session=:sess and value1=:v1 and value2=:v2");
-  $st->bindValue(':sess',$sess,PDO::PARAM_INT);
+  $st->bindValue(':sess',$sess,PDO::PARAM_STR);
   $started=0;
   $done=0;
   foreach($axis1vals as $a1){

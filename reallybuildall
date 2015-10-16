@@ -1,0 +1,14 @@
+#!/bin/sh
+# Builds all the standard set plus Jim's oddities and fun things
+# like SDL bindings.
+
+./buildall
+
+for d in mpc sdl midi serial vector2d udp curl
+do
+    echo $d
+    cd $d
+    ./build
+    cd ..
+done
+

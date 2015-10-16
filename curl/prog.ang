@@ -1,4 +1,4 @@
-"../libs/curl" library drop
+`curl library drop
 
 "http://cranberry.pale.org/~white/prog.php" !URL
 
@@ -38,9 +38,9 @@
 
 # test routines
 :testreset
-    0 [`foo,`bar,`baz,`quz] [1,2,3,4] senddata;
+    `test [`foo,`bar,`baz,`quz] [1,2,3,4] senddata;
 :teststarted
-    0 `baz 1 markstarted;
+    `test `baz 1 markstarted;
 :testdone
-    0 `baz 1 markdone;
+    `test `baz 1 markdone;
 
