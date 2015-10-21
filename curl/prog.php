@@ -39,6 +39,20 @@ while($r = $st->fetchObject()){
   print("<a href=\"prog.php?session=$s\">$s</a>  ");
 }
 
+function clearsess($s){
+  global $db;
+  $st = $db->prepare("delete from axes where session=:sess");
+  $st->bindValue(':sess',$s);
+  $st->execute();
+  $st = $db->prepare("delete from done where session=:sess");
+  $st->bindValue(':sess',$s);
+  $st->execute();
+}
+  
+
+if(isset($_GET['clearsess'])){
+  clearsess($_GET['clearsess']);
+}
 
 if(isset($_POST['sessionset'])){
   $sess = $_POST['sessionset'];
@@ -46,12 +60,7 @@ if(isset($_POST['sessionset'])){
   $axis1 = split(":",$_POST['axis1']);
   $axis2 = split(":",$_POST['axis2']);
   
-  $st = $db->prepare("delete from axes where session=:sess");
-  $st->bindValue(':sess',$sess);
-  $st->execute();
-  $st = $db->prepare("delete from done where session=:sess");
-  $st->bindValue(':sess',$sess);
-  $st->execute();
+  clearsess($sess);
   
   foreach($axis1 as $a){
     $st = $db->prepare("insert into axes(session,value,axis) values(:sess,:val,1)");
@@ -143,6 +152,7 @@ if(isset($_POST['sessionset'])){
   
 }
 
+print "<p>Clear this session by clicking <a href=\"prog.php?clearsess=$sess\">here</a> DANGER. WILL DELETE PROGRESS DATA.</p>";
 
 ?>
 </body>
