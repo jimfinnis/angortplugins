@@ -31,6 +31,15 @@ define("DBPASS","prog");
 $db = new PDO("mysql:host=localhost;dbname=prog",DBUSER,DBPASS);
 $db->setAttribute(PDO::ATTR_ERRMODE,PDO::ERRMODE_WARNING);
 
+$st = $db->prepare("select distinct(session) as sess from axes");
+$st->execute();
+print "<h2>Sessions</h2>";
+while($r = $st->fetchObject()){
+  $s=$r->sess;
+  print("<a href=\"prog.php?session=$s\">$s</a>  ");
+}
+
+
 if(isset($_POST['sessionset'])){
   $sess = $_POST['sessionset'];
   print "sess $sess";
@@ -131,6 +140,7 @@ if(isset($_POST['sessionset'])){
   }
   print "</table>";
   print "<p>Started: $started, done: $done</p>";
+  
 }
 
 
