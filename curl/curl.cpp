@@ -58,13 +58,13 @@ size_t writefunc(void *buffer, size_t size, size_t nmemb, void *userp){
     CurlWrapper *c = (CurlWrapper *)userp;
     
     size_t s = size*nmemb;
-    if(c->len+s>c->maxsize){
+    while(c->len+s+1>c->maxsize){
         c->maxsize+=1024;
         c->data=(char *)realloc(c->data,c->maxsize);
     }
     memcpy(c->data+c->len,buffer,s);
     c->len+=s;
-    printf("Data: %ld\n",s);
+    c->data[c->len]=0;
     return s;
 }
 
@@ -198,5 +198,7 @@ inline Value *hgetsym(Hash *h,const char *s){
 
 %wordargs data A|curl (curl -- data) get downloaded data (as string)
 {
-    a->pushString(p0->data);
+    Value v;
+    Types::tString->set(&v,p0->data);
+    a->pushval()->copy(&v);
 }

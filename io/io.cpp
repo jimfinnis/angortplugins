@@ -27,10 +27,12 @@ class File : public GarbageCollected {
 public:
     File(FILE *_f){
         f = _f;
+        noclose=false;
     }
     
     void close(){
-        fclose(f);
+        if(!noclose)
+            fclose(f);
     }
     
     
@@ -38,6 +40,7 @@ public:
         close();
     }
     FILE *f;
+    bool noclose;
 };
 
 class FileType : public GCType {
@@ -58,9 +61,18 @@ public:
         v->v.gc = new File(f);
         incRef(v);
     }
+    
+    // careful with this - only for stdout, etc. which are static.
+    void set(Value *v, File *f){
+        v->clr();
+        v->t=this;
+        v->v.gc=f;
+        incRef(v);
+    }
 };
 
 static FileType tFile;
+static File *stdinf=NULL,*stdoutf=NULL,*stderrf=NULL;
 
 %word open (path mode -- fileobj) open a file, modes same as fopen()
 {
@@ -449,6 +461,31 @@ static void doreadhash(FILE *f,Value *res){
         h->setSymInt("ctime",b.st_ctime);
     } else
         res->clr();
+}
+
+%word stdin (-- stdin) stack shared stdin object
+{
+    if(!stdinf){
+        stdinf=new File(stdin);stdinf->noclose=true;
+        stdinf->incRefCt(); //ensure never deleted
+    }
+    tFile.set(a->pushval(),stdinf);
+}
+%word stdout (-- stdout) stack shared stdout object
+{
+    if(!stdoutf){
+        stdoutf=new File(stdout);stdoutf->noclose=true;
+        stdoutf->incRefCt(); //ensure never deleted
+    }
+    tFile.set(a->pushval(),stdoutf);
+}
+%word stderr (-- stderr) stack shared stderr object
+{
+    if(!stderrf){
+        stderrf=new File(stderr);stderrf->noclose=true;
+        stderrf->incRefCt(); //ensure never deleted
+    }
+    tFile.set(a->pushval(),stderrf);
 }
 
 %init

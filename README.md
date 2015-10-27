@@ -7,13 +7,27 @@ The install script copies any libraries in or below the libs
 directory into the appropriate place (usr/local/share/angort, typically,
 but this can be changed).
 
-It is up to you to build which libraries you need. Typically the IO library
-will be required. From this directory, 
+It is up to you to build which libraries you need, although
+the **buildall** script will build the basic set: IO, regex, time, sys.
+The others are for odd applications I need myself, and **reallybuildall**
+will build those. They're here because they're fun and provide useful
+example code.
+So to build the standard set:
 
-    cd io
+    ./buildall
+    sudo ./install
+    
+The latter line will copy any **.angso** (Angort shared objects, i.e.
+plugins) into /usr/local/share/angort.
+
+To build a single library (e.g. SDL, which has quite a few dependencies -
+see the build script in the SDL directory):
+
+    cd sdl
     ./build
 
-Of course, Angort will need to be installed first, and any prerequisites
-for the library. Then go back into the top directory and
+Of course, any prerequisites
+for the library will need to be installed first.
+Then go back into the top directory and
 
     sudo install
