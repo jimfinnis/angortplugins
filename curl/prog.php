@@ -31,18 +31,36 @@ define("DBPASS","prog");
 $db = new PDO("mysql:host=localhost;dbname=prog",DBUSER,DBPASS);
 $db->setAttribute(PDO::ATTR_ERRMODE,PDO::ERRMODE_WARNING);
 
+$st = $db->prepare("select distinct(session) as sess from axes");
+$st->execute();
+print "<h2>Sessions</h2>";
+while($r = $st->fetchObject()){
+  $s=$r->sess;
+  print("<a href=\"prog.php?session=$s\">$s</a>  ");
+}
+
+function clearsess($s){
+  global $db;
+  $st = $db->prepare("delete from axes where session=:sess");
+  $st->bindValue(':sess',$s);
+  $st->execute();
+  $st = $db->prepare("delete from done where session=:sess");
+  $st->bindValue(':sess',$s);
+  $st->execute();
+}
+  
+
+if(isset($_GET['clearsess'])){
+  clearsess($_GET['clearsess']);
+}
+
 if(isset($_POST['sessionset'])){
   $sess = $_POST['sessionset'];
   print "sess $sess";
   $axis1 = split(":",$_POST['axis1']);
   $axis2 = split(":",$_POST['axis2']);
   
-  $st = $db->prepare("delete from axes where session=:sess");
-  $st->bindValue(':sess',$sess);
-  $st->execute();
-  $st = $db->prepare("delete from done where session=:sess");
-  $st->bindValue(':sess',$sess);
-  $st->execute();
+  clearsess($sess);
   
   foreach($axis1 as $a){
     $st = $db->prepare("insert into axes(session,value,axis) values(:sess,:val,1)");
@@ -131,8 +149,10 @@ if(isset($_POST['sessionset'])){
   }
   print "</table>";
   print "<p>Started: $started, done: $done</p>";
+  
 }
 
+print "<p>Clear this session by clicking <a href=\"prog.php?clearsess=$sess\">here</a> DANGER. WILL DELETE PROGRESS DATA.</p>";
 
 ?>
 </body>
