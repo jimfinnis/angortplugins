@@ -22,6 +22,20 @@ using namespace angort;
 %name io
 %shared
 
+class FileIterator : public Iterator<Value *> {
+private:
+    Value v;
+public:
+    class File *file;
+    FileIterator(class File *f);
+    virtual ~FileIterator();
+    virtual void first();
+    virtual void next();
+    virtual bool isDone() const;
+    virtual Value *current(){
+        return &v;
+    }
+};
 
 class File : public GarbageCollected {
 public:
@@ -29,16 +43,16 @@ public:
         f = _f;
         noclose=false;
     }
+    ~File(){
+        close();
+    }
     
     void close(){
         if(!noclose)
             fclose(f);
     }
     
-    
-    ~File(){
-        close();
-    }
+    virtual Iterator<class Value *> *makeValueIterator();    
     FILE *f;
     bool noclose;
 };
@@ -71,8 +85,76 @@ public:
     }
 };
 
+
 static FileType tFile;
 static File *stdinf=NULL,*stdoutf=NULL,*stderrf=NULL;
+
+
+/// allocates a data buffer!
+static const char *readstr(FILE *f,bool endAtEOL=false){
+    int bufsize = 128;
+    int ct=0;
+    char *buf = (char *)malloc(bufsize);
+    
+    for(;;){
+        char c = fgetc(f);
+        if(c==EOF || (endAtEOL && (c=='\n' || c=='\r')) || !c)
+            break;
+        if(ct==bufsize){
+            bufsize *= 2;
+            buf = (char *)realloc(buf,bufsize);
+        }
+        buf[ct++]=c;
+    }
+    buf[ct]=0;
+    return buf;
+}
+
+/*
+ * Iterator
+ */
+
+FileIterator::FileIterator(File *f){
+    file = f;
+    f->incRefCt();
+}
+
+FileIterator::~FileIterator(){
+    if(file->decRefCt())
+        delete file;
+    v.clr();
+}
+
+void FileIterator::first() {
+    fseek(file->f,0L,SEEK_SET);
+}
+
+void FileIterator::next() {
+    const char *s = readstr(file->f,true);
+    Types::tString->set(&v,s);
+    free((char *)s);
+}
+
+bool FileIterator::isDone() const {
+    return feof(file->f);
+}
+
+
+
+Iterator<class Value *> *File::makeValueIterator(){
+    return new FileIterator(this);
+}
+
+
+
+
+/*
+ * Words
+ */
+
+
+
+
 
 %word open (path mode -- fileobj) open a file, modes same as fopen()
 {
@@ -308,25 +390,6 @@ static FILE *getf(Value *p,bool out){
 }
 
 
-/// allocates a data buffer!
-static const char *readstr(FILE *f,bool endAtEOL=false){
-    int bufsize = 128;
-    int ct=0;
-    char *buf = (char *)malloc(bufsize);
-    
-    for(;;){
-        char c = fgetc(f);
-        if(c==EOF || (endAtEOL && (c=='\n' || c=='\r')) || !c)
-            break;
-        if(ct==bufsize){
-            bufsize *= 2;
-            buf = (char *)realloc(buf,bufsize);
-        }
-        buf[ct++]=c;
-    }
-    buf[ct]=0;
-    return buf;
-}
 
 %word readstr (fileobj/none -- str) read string until null/EOL/EOF
 {

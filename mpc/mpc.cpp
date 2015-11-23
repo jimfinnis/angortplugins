@@ -418,6 +418,14 @@ void sendAddOfNameInHash(Value *v){
         conn.throwError();
 }
 
+%wordargs del n (index --) remove a song from the queue
+{
+    conn.check();
+    if(!mpd_run_delete(conn.mpd,p0))
+        conn.throwError();
+    
+}
+
 %word playlists (-- list) produce a list of playlists
 {
     conn.check();

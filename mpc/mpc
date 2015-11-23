@@ -228,13 +228,17 @@ global list # force a new definition in this namespace
 :add :"(list --) add a list of songs to the  playlist"
     mpc$add;
 
-:d |x:|
+:dmp |x:|
     :"(lst --) dump a list or hash"
     ?x type `hash = if
         ?x each {i std$p "   " std$p i ?x get .}
     else
         ?x each {i.}
     then;
+    
+:d 
+    :"(n --) delete item in current playlist"
+    mpc$del;
 
 :f 
     :"(--) move forwards in current playlist"
@@ -259,12 +263,6 @@ global list # force a new definition in this namespace
         ?a ?lst set
     } ?lst;
 
-:load
-    :"(name --) load the playlist from a stored playlist"
-    mpc$load;
-:save 
-    :"(name --) save the current playlist"
-    mpc$save;
 
 :rm
     :"(name --) delete a playlist"
@@ -352,6 +350,8 @@ global list # force a new definition in this namespace
     ?n "r" io$open !f
     ?f isnone if "Cannot open file " std$p ?n. stop then
     ?f io$read32 !p
+    ?p 0 < if 0!p then
+        
     "Playlist position: " std$p ?p .
     ?f io$readlist !l
     "Adding " std$p ?l len std$p " items.".
