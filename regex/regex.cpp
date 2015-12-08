@@ -122,14 +122,13 @@ static RegexType tR;
         int end = match.rm_eo;
         if(start<0)break;
         int len = end-start;
-        newlen+=len;
+        newlen+=(repllen-len);
         off += end;
     }
     
-    
     // then do the replacements
     Value v;
-    char *s = Types::tString->allocate(&v,newlen,Types::tString);
+    char *s = Types::tString->allocate(&v,newlen+1,Types::tString);
     
     int inoffset=0;
     int outoffset=0;

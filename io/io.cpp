@@ -39,7 +39,7 @@ public:
 
 class File : public GarbageCollected {
 public:
-    File(FILE *_f){
+    File(FILE *_f) : GarbageCollected () {
         f = _f;
         noclose=false;
     }
@@ -53,6 +53,11 @@ public:
     }
     
     virtual Iterator<class Value *> *makeValueIterator();    
+    
+    // this stops the GC trying to iterate over the file itself!
+    virtual Iterator<class Value *> *makeGCValueIterator(){
+        return NULL;
+    }
     FILE *f;
     bool noclose;
 };
@@ -127,6 +132,7 @@ FileIterator::~FileIterator(){
 
 void FileIterator::first() {
     fseek(file->f,0L,SEEK_SET);
+    next();
 }
 
 void FileIterator::next() {
@@ -136,7 +142,8 @@ void FileIterator::next() {
 }
 
 bool FileIterator::isDone() const {
-    return feof(file->f);
+    int f = feof(file->f);
+    return f!=0;
 }
 
 

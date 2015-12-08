@@ -39,6 +39,11 @@ using namespace angort;
     a->pushString(buf);
 }
 
+%word getpid (-- PID)
+{
+    a->pushInt(getpid());
+}
+
 %init
 {
     fprintf(stderr,"Initialising SYS plugin, %s %s\n",__DATE__,__TIME__);

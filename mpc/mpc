@@ -375,12 +375,12 @@ global list # force a new definition in this namespace
 
 :srt
     :"(list -- list) sort list by album, then track"
-    clone dup (mpcc$sortFunc) fsort
+    clone dup (sortFunc) fsort
 ;
 
 :lsrt
     :"(--) sort playlist by album, then track"
-    mpc$list dup (mpcc$sortFunc) fsort clr add
+    mpc$list dup (sortFunc) fsort clr add
 ;
 
 # add words here for your standard connections
