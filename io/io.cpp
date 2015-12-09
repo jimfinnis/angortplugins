@@ -216,6 +216,26 @@ static FILE *getf(Value *p,bool out){
         a->pushNone();
 }
 
+%word writedouble (value fileobj/none --) write 64-bit float
+{
+    Value *p[2];
+    a->popParams(p,"nA",&tFile);
+    double b = p[0]->toFloat();
+    fwrite(&b,sizeof(b),1,getf(p[1],true));
+}    
+
+%word readdouble (fileobj/none -- float/none) read 64-bit float
+{
+    Value *p;
+    double i;
+    a->popParams(&p,"A",&tFile);
+    
+    if(fread(&i,sizeof(i),1,getf(p,false))>0)
+        a->pushFloat(i);
+    else
+        a->pushNone();
+}
+
 %word read8 (fileobj/none -- int/none) read signed byte
 {
     Value *p;

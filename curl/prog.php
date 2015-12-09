@@ -33,11 +33,32 @@ $db->setAttribute(PDO::ATTR_ERRMODE,PDO::ERRMODE_WARNING);
 
 $st = $db->prepare("select distinct(session) as sess from axes");
 $st->execute();
-print "<h2>Sessions</h2>";
 while($r = $st->fetchObject()){
   $s=$r->sess;
   print("<a href=\"prog.php?session=$s\">$s</a>  ");
 }
+
+function getcount($stat){
+  global $db;
+  $st = $db->prepare("select count(*) as count from done where status=:stat and 
+                     session in (select distinct(session) from axes);");
+  $st->bindValue(':stat',$stat);
+  $st->execute();
+  if($r = $st->fetchObject()){
+    return $r->count;
+  } else {
+    return -1;
+  }
+}
+
+$ctwaiting=getcount(0);
+$ctrunning=getcount(1);
+$ctdone = getcount(2);
+
+print("<p>Waiting: $ctwaiting,  running: $ctrunning,  done: $ctdone</p>");
+
+
+
 
 function clearsess($s){
   global $db;
@@ -60,7 +81,7 @@ if(isset($_POST['sessionset'])){
   $axis1 = split(":",$_POST['axis1']);
   $axis2 = split(":",$_POST['axis2']);
   
-  clearsess($sess);
+//  clearsess($sess);
   
   foreach($axis1 as $a){
     $st = $db->prepare("insert into axes(session,value,axis) values(:sess,:val,1)");
@@ -101,9 +122,8 @@ if(isset($_POST['sessionset'])){
   $st->bindValue(':ax',1,PDO::PARAM_INT);
   $st->bindValue(':sess',$sess,PDO::PARAM_STR);
   $st->execute();
-  print "<h1>Session $sess</h1>";
   $date = date('r');
-  print "<h2>$date</h2>";
+  print "<h1>Session $sess at $date</h1>";
   while($row = $st->fetchObject()){
     $axis1vals[] = $row->value;
   }
