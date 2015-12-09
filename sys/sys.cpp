@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <limits.h>
 #include <angort/angort.h>
 
 using namespace angort;
@@ -29,6 +30,18 @@ using namespace angort;
         a->pushString(s);
     else
         a->pushNone();
+}
+
+%word cwd (-- working directory)
+{
+    char buf[PATH_MAX];
+    getcwd(buf,PATH_MAX);
+    a->pushString(buf);
+}
+
+%word getpid (-- PID)
+{
+    a->pushInt(getpid());
 }
 
 %init
