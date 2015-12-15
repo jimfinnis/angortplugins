@@ -95,7 +95,7 @@ static RegexType tR;
         Value *v = list->append();
         ArrayList<Value> *pair = Types::tList->set(v);
         Types::tInteger->set(pair->append(),match.rm_so+off);
-        Types::tInteger->set(pair->append(),match.rm_eo+off);
+        Types::tInteger->set(pair->append(),(match.rm_eo-match.rm_so));
         off += match.rm_eo;
     }
     a->pushval()->copy(&v);
