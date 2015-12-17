@@ -56,8 +56,8 @@ private
     "List length: " std$p ?list len.
     
     # get the bit of the list we want
-    ?startidx ?endidx ?startidx- 
-    ?list slice !list
+    ?list ?startidx ?endidx ?startidx- 
+    slice !list
     
     # work out some max lengths
     
@@ -92,7 +92,7 @@ private
 ;
 
 # get the track number from the MPD track number string e.g. "11/14" gives 11. 
-:gettrack |x:|
+:gettrack |x:t|
     ?x?`track !x
     ?x isnone if
         0
@@ -101,7 +101,8 @@ private
             drop
             ?x toint
         else
-            0 swap ?x slice toint
+            !t
+            ?x 0 ?t slice toint
         then
     then
 ;

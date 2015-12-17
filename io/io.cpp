@@ -99,7 +99,7 @@ static File *stdinf=NULL,*stdoutf=NULL,*stderrf=NULL;
 static const char *readstr(FILE *f,bool endAtEOL=false){
     int bufsize = 128;
     int ct=0;
-    char *buf = (char *)malloc(bufsize);
+    char *buf = (char *)malloc(bufsize+1);
     
     for(;;){
         char c = fgetc(f);
@@ -107,7 +107,7 @@ static const char *readstr(FILE *f,bool endAtEOL=false){
             break;
         if(ct==bufsize){
             bufsize *= 2;
-            buf = (char *)realloc(buf,bufsize);
+            buf = (char *)realloc(buf,bufsize+1);
         }
         buf[ct++]=c;
     }
