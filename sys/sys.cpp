@@ -44,6 +44,26 @@ using namespace angort;
     a->pushInt(getpid());
 }
 
+%word fork (-- PID)
+{
+    a->pushInt(fork());
+}
+
+%wordargs exec ls (arglist path --)
+{
+    char **args = new char * [p0->count()+1];
+    for(int i=0;i<p0->count();i++){
+        args[i] = strdup(p0->get(i)->toString().get());
+    }
+    args[p0->count()] = NULL;
+    execv(p1,args);
+}
+
+%wordargs system s (string --)
+{
+    system(p0);
+}
+
 %init
 {
     fprintf(stderr,"Initialising SYS plugin, %s %s\n",__DATE__,__TIME__);
