@@ -48,8 +48,10 @@ public:
     }
     
     void close(){
-        if(!noclose)
+        if(!noclose && f){
             fclose(f);
+            f=NULL;
+        }
     }
     
     virtual Iterator<class Value *> *makeValueIterator();    
@@ -68,10 +70,15 @@ public:
         add("file","FILE");
     }
     
-    FILE *get(Value *v){
+    FILE *getf(Value *v){
         if(v->t!=this)
             throw RUNT("not a file");
         return ((File *)(v->v.gc))->f;
+    }
+    File *get(Value *v){
+        if(v->t!=this)
+            throw RUNT("not a file");
+        return (File *)(v->v.gc);
     }
     
     void set(Value *v,FILE *f){
@@ -94,6 +101,7 @@ public:
 static FileType tFile;
 static File *stdinf=NULL,*stdoutf=NULL,*stderrf=NULL;
 
+%type file tFile File
 
 /// allocates a data buffer!
 static const char *readstr(FILE *f,bool endAtEOL=false){
@@ -221,12 +229,17 @@ static void dowrite(FILE *f,Value *v,bool inContainer=false){
     }
 }
 
+%wordargs close A|file (fileobj --) close file (also done on delete)
+{
+    p0->close();
+}
+
 
 static FILE *getf(Value *p,bool out){
     if(p->isNone())
         return out?stdout:stdin;
     else
-        return tFile.get(p);
+        return tFile.getf(p);
 }
 
 %word write (value fileobj/none --) write value as binary (int/float is 32 bits) to file or stdout

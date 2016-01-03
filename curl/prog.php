@@ -152,7 +152,7 @@
     }
     print "DONE";
   } else {
-    if(isset($_GET["session"])){
+    if(isset($_GET["session"])||isset($_POST["session"])){
       $sess = $_GET["session"];
       if(isset($_POST['axis1'])){
         $sess = $_POST["session"]; // post overrides get. 
@@ -165,6 +165,11 @@
         $st->bindValue(':v1',$axis1,PDO::PARAM_STR);
         $st->bindValue(':v2',$axis2,PDO::PARAM_STR);
         $st->bindValue(':stat',$stat,PDO::PARAM_INT);
+        
+        file_put_contents("/tmp/proglog",
+                          "$sess - $axis1 - $axis2 - $stat\n");
+                          
+        
         if(!$st->execute()){
           print("FAILED $sess\n");
           print_r($st->errorInfo());
@@ -193,6 +198,7 @@
   
   
   print "<p>Clear this session by clicking <a href=\"prog.php?clearsess=$sess\">here</a> DANGER. WILL DELETE PROGRESS DATA.</p>";
+  print "<p><a href=\"prog.php\">Click here to return to overview</a></p>";
   
 ?>
 </body>
