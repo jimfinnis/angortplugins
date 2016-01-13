@@ -28,7 +28,7 @@ private
 
 
 # "decorate" a song hash, giving it a toString member.
-:addstrconv |s:|
+:addstrconv |s/hash:|
     (   |x:|
         ?x?`artist chknone
         ": " +

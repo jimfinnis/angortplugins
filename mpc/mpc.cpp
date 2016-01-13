@@ -126,6 +126,8 @@ void makeSong(Value *out, const mpd_song *song){
     Value *params[2];
     
     a->popParams(params,"hn");
+    Value hv;
+    hv.copy(params[0]); // avoid accidental delete on push
     conn.check();
     
     bool exact = params[1]->toInt()?true:false;
@@ -160,6 +162,7 @@ void makeSong(Value *out, const mpd_song *song){
         makeSong(list->append(),song);
         mpd_song_free(song);
     }
+
     if (mpd_connection_get_error(conn.mpd) != MPD_ERROR_SUCCESS) {
         goto error;
     }
