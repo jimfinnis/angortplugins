@@ -15,11 +15,15 @@ package mpcc
 
 private
 
+:showbool |b/integer,s/string:|
+    ?s std$p " " std$p ?b if "ON " else "OFF" then std$p
+;
+
+
 # if a value is none, replace it with a string
 :chknone |s:| ?s isnone
     if "<<NONE>>" else ?s then
 ;
-
 
 # if a value is none, replace it with 0
 :chknoneint |s:| ?s isnone
@@ -126,6 +130,17 @@ private
 
 public
 
+:rep |:t|
+    mpc$stat?`repeat not dup
+    mpc$setrepeat
+    "Repeat is now" showbool nl
+;
+:rnd |:t|
+    mpc$stat?`random not dup
+    mpc$setrandom
+    "Random is now" showbool nl
+;
+
 :timestr |s:m|
     ?s toint !s
     ?s 60 / !m
@@ -220,6 +235,9 @@ global list # force a new definition in this namespace
         "at            " std$p 
         ?stat?`elapsed timestr "/" ?stat?`total timestr + + .
     then
+    ?stat?`repeat "Repeat" showbool "    " std$p
+    ?stat?`random "Random" showbool nl
+    
 ;
 
 :v mpc$setvol;

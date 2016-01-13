@@ -451,6 +451,20 @@ void sendAddOfNameInHash(Value *v){
     if(!mpd_run_set_volume(conn.mpd,p->toInt()))
         conn.throwError();
 }
+
+%wordargs setrandom i (bool --) set random
+{
+    conn.check();
+    if(!mpd_run_random(conn.mpd,p0?true:false))
+        conn.throwError();
+}
+
+%wordargs setrepeat i (bool --) set repeat
+{
+    conn.check();
+    if(!mpd_run_repeat(conn.mpd,p0?true:false))
+        conn.throwError();
+}
         
 
 
