@@ -127,7 +127,15 @@
   
   
   if(isset($_GET['clearsess'])){
-    clearsess($_GET['clearsess']);
+    $sess = $_GET['clearsess'];
+    if($sess == 'all'){
+      $st = $db->prepare("delete from axes");
+      $st->execute();
+      $st = $db->prepare("delete from done");
+      $st->execute();
+    } else {
+      clearsess($_GET['clearsess']);
+    }
   }
   
   if(isset($_POST['sessionset'])){
@@ -178,6 +186,7 @@
       $date = date('r');
       print "<h1>Session $sess at $date</h1>";
       showsess($sess);
+      print "<p>Clear this session by clicking <a href=\"prog.php?clearsess=$sess\">here</a> DANGER. WILL DELETE PROGRESS DATA.</p>";
     } else {
       $st = $db->prepare('select distinct(session) from axes');
       $st->execute();
@@ -193,11 +202,11 @@
       print "</tr></table>";
       
     }
+    print "<p>Clear ALL DATA by clicking <a href=\"prog.php?clearsess=all\">here</a> DANGER. WILL DELETE PROGRESS DATA.</p>";
     
   }
   
   
-  print "<p>Clear this session by clicking <a href=\"prog.php?clearsess=$sess\">here</a> DANGER. WILL DELETE PROGRESS DATA.</p>";
   print "<p><a href=\"prog.php\">Click here to return to overview</a></p>";
   
 ?>
