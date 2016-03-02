@@ -17,9 +17,12 @@ using namespace angort;
 
 #include "texture.h"
 #include "font.h"
+#include "joy.h"
 
 %name sdl
 %shared
+
+%type joystick tJoystick Joystick
 
 static SDL_Window *screen = NULL;
 static SDL_Renderer *renderer = NULL;
@@ -517,13 +520,95 @@ int keyMod = 0;
     done=true;
 }
 
+%word joyct (-- count) get number of joysticks
+{
+    a->pushInt(SDL_NumJoysticks());
+}
+
+%wordargs joyname i (idx -- name) get joystick name
+{
+    a->pushString(SDL_JoystickNameForIndex(p0));
+}
+
+%wordargs joyopen i (i -- joy) open a joystick
+{
+    SDL_Joystick *j = SDL_JoystickOpen(p0);
+    tJoystick.set(a->pushval(),j);
+}
+
+%wordargs joynumaxes A|joystick (joy -- n) number of axes
+{
+    a->pushInt(SDL_JoystickNumAxes(p0->j));
+}
+
+%wordargs joygetaxis iA|joystick (axis joy -- n) get axis
+{
+    a->pushInt(SDL_JoystickGetAxis(p1->j,p0));
+}
+
+%wordargs joynumbuttons A|joystick (joy -- n) number of buttons
+{
+    a->pushInt(SDL_JoystickNumButtons(p0->j));
+}
+
+%wordargs joygetbutton iA|joystick (axis joy -- n) get button
+{
+    a->pushInt(SDL_JoystickGetButton(p1->j,p0));
+}
+
+%wordargs joynumhats A|joystick (joy -- n) number of hats
+{
+    a->pushInt(SDL_JoystickNumHats(p0->j));
+    
+}
+
+static void hat2xy(int code,int *x,int *y){
+    switch(code){
+    case SDL_HAT_LEFTUP:
+        *x=-1;*y=1;break;
+    case SDL_HAT_LEFT:
+        *x=-1;*y=0;break;
+    case SDL_HAT_LEFTDOWN:
+        *x=-1;*y=-1;break;
+    case SDL_HAT_UP:
+        *x=0;*y=1;break;
+    default:
+    case SDL_HAT_CENTERED:
+        *x=0;*y=0;break;
+    case SDL_HAT_DOWN:
+        *x=0;*y=-1;break;
+    case SDL_HAT_RIGHTUP:
+        *x=1;*y=1;break;
+    case SDL_HAT_RIGHT:
+        *x=1;*y=0;break;
+    case SDL_HAT_RIGHTDOWN:
+        *x=1;*y=-1;break;
+    }
+}
+
+%wordargs joygethat iA|joystick (axis joy -- y x) get hat
+{
+    int code = SDL_JoystickGetHat(p1->j,p0);
+    int x,y;
+    hat2xy(code,&x,&y);
+    a->pushInt(y);
+    a->pushInt(x);
+}
+
+
+
+
+
+
 
 %init
 {
     fprintf(stderr,"Initialising SDL plugin, %s %s\n",__DATE__,__TIME__);
     SDL_Init(SDL_INIT_EVERYTHING);
+    SDL_InitSubSystem(SDL_INIT_JOYSTICK);
     IMG_Init(IMG_INIT_JPG|IMG_INIT_PNG);
     TTF_Init();
+    SDL_JoystickEventState(SDL_ENABLE);
     fprintf(stderr,"SDL initialised\n");
     inited=true;
     
