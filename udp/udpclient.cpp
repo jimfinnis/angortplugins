@@ -21,7 +21,15 @@
 #include <stdlib.h>
 #include "udpclient.h"
 
-const char *hostName=DEFAULT_HOSTNAME;
+extern bool udpDebugging;
+static char hostName[1024];
+static int port=13231;
+
+void initClient(const char *host,int p)
+{
+    strcpy(hostName,host);
+    port = p;
+}
 
 bool udpSend(const char *msg){
     sockaddr_in servaddr;
@@ -31,10 +39,13 @@ bool udpSend(const char *msg){
         return false;
     }
     
+    if(udpDebugging)
+        printf("SEND [%s:%d] %s\n",hostName,port,msg);
+    
     bzero(&servaddr,sizeof(servaddr));
     servaddr.sin_family = AF_INET;
     servaddr.sin_addr.s_addr = inet_addr(hostName);
-    servaddr.sin_port = htons(PORT);
+    servaddr.sin_port = htons(port);
     if (sendto(fd, msg, strlen(msg)+1, 0, // +1 to include terminator
                (sockaddr*)&servaddr, sizeof(servaddr)) < 0){
         perror("cannot send message");

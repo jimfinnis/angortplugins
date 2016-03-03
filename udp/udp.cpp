@@ -1,6 +1,11 @@
 /**
  * @file
- * Handles the UDP communications
+ * Handles key/value pairs over UDP. Values are received with k/v
+ * and also can be sent with k/v. 
+ * 
+ * UDP properties are special variables to do this.
+ * These variables can be set by k=v messages coming in from outside,
+ * and when set by this side are sent to the client.
  * 
  */
 
@@ -8,6 +13,8 @@
 #include <time.h>
 #include "udpclient.h"
 #include "udpserver.h"
+
+bool udpDebugging=false;
 
 double gettime(){
     timespec ts;
@@ -42,6 +49,9 @@ using namespace angort;
 /// head of a linked list of UDP properties
 static class UDPProperty *headUDPPropList=NULL;
 
+/// thing to call when change on UDPvar received
+static Value onChange;
+
 class UDPProperty : public Property {
 public:
     /// linkage field
@@ -50,12 +60,20 @@ public:
     /// actual value; gets copied to and from
     /// field v for Angort access
     float val;
+    /// has been written locally, needs to be sent
+    bool changed;
+    
+    /// call this when change received from remote
+    Value onChange;
     
     /// name of property
     const char *name;
     
     UDPProperty(const char *n){
+        if(!strcmp(n,"time"))
+            throw Exception("time cannot be a UDP var");
         val=0;
+        changed=true;
         // add to list
         next=headUDPPropList;
         headUDPPropList=this;
@@ -65,14 +83,24 @@ public:
     ~UDPProperty(){
         free((void *)name);
     }
+    
+    static UDPProperty *getByName(const char *n){
+        for(UDPProperty *p=headUDPPropList;p;p=p->next){
+            if(!strcmp(p->name,n))
+                return p;
+        }
+        return NULL;
+    }
                    
     
     void set(float f){
         val = f;
+        changed=true;
     }
     
     virtual void postSet(){
         val = v.toFloat();
+        changed=true;
     }
     
     virtual void preGet(){
@@ -84,20 +112,18 @@ class MyUDPServerListener: public UDPServerListener {
     /// messages arrive as key=value pairs.
     virtual void onKeyValuePair(const char *s,float v){
         extern void setUDPProperty(const char *name,float val);
-        printf("RECEIVED %s=%f\n",s,v);
+        if(udpDebugging)printf("RECEIVED %s=%f\n",s,v);
         setUDPProperty(s,v);
     }
 };
 MyUDPServerListener listener;
 
 void setUDPProperty(const char *name,float val){
-    for(UDPProperty *p=headUDPPropList;p;p=p->next){
-        if(!strcmp(name,p->name)){
-            p->val = val;
-            return;
-        }
-    }
-    throw Exception().set("cannot find UDP property %s",name);
+    UDPProperty *p = UDPProperty::getByName(name);
+    if(p){
+        p->val = val;
+    } else if(strcmp(name,"time"))
+        throw Exception().set("cannot find UDP property in set from remote %s",name);
 }
 
 %word poll (--) send and receive queued UDP data
@@ -106,7 +132,10 @@ void setUDPProperty(const char *name,float val){
     
     // send props
     for(UDPProperty *p=headUDPPropList;p;p=p->next){
-        udpwrite("%s=%f",p->name,p->val);
+        if(p->changed){
+            udpwrite("%s=%f",p->name,p->val);
+            p->changed=false;
+        }
     }
 }
 
@@ -117,22 +146,31 @@ void setUDPProperty(const char *name,float val){
     a->registerProperty(b.get(),new UDPProperty(b.get()));
 }
 
-%word host (name --) set host to write to (default=localhost)
-{
-    const StringBuffer& b = a->popString();
-    hostName = strdup(b.get());
-}
-
-%word write (string --) write a string to the UDP port for the monitor (13231)
+%word write (string --) write a string to the UDP port
 {
     const StringBuffer& b = a->popString();
     udpwrite(b.get());
 }    
 
-%word start (port --) start UDP server on port
+%wordargs start isi (sport chost cport --) start UDP server and client
 {
-    server.start(a->popInt());
+    initClient(p1,p2);
+    server.start(p0);
     server.setListener(&listener);
+}
+
+%wordargs onchange cs (callback(v k --) name --) set callback for change received on UDP var
+{
+    UDPProperty *p = UDPProperty::getByName(p1);
+    if(p)
+        p->onChange.copy(p0);
+    else
+        throw Exception().set("cannot find UDP property in onchange %s",p1);
+}
+
+%wordargs debug i (bool --) set debugging on messages
+{
+    udpDebugging = p0;
 }
 
 %init
