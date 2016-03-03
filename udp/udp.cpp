@@ -122,6 +122,11 @@ void setUDPProperty(const char *name,float val){
     UDPProperty *p = UDPProperty::getByName(name);
     if(p){
         p->val = val;
+        if(!p->onChange.isNone()){
+            Angort *a = Angort::getCallingInstance();
+            a->pushFloat(val);
+            a->runValue(&p->onChange);
+        }
     } else if(strcmp(name,"time"))
         throw Exception().set("cannot find UDP property in set from remote %s",name);
 }
