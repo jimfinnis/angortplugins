@@ -378,13 +378,13 @@ global list # force a new definition in this namespace
     ?p 0 mpc$seek
 ;
 
-:save
+:sv
     :"(--) shortcut to save playlist and pos"
     ?Home "/.angortmplist" + savefile
     
 ;
 
-:load
+:ld
     :"(--) shortcut to save playlist and pos"
     ?Home "/.angortmplist" + loadfile
 ;

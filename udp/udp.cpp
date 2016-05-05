@@ -11,6 +11,7 @@
 
 #include <angort/angort.h>
 #include <time.h>
+#include <math.h>
 #include "udpclient.h"
 #include "udpserver.h"
 
@@ -71,7 +72,7 @@ public:
     
     UDPProperty(const char *n){
         if(!strcmp(n,"time"))
-            throw Exception("time cannot be a UDP var");
+            throw Exception(EX_FAILED,"time cannot be a UDP var");
         val=0;
         changed=true;
         // add to list
@@ -99,8 +100,11 @@ public:
     }
     
     virtual void postSet(){
-        val = v.toFloat();
-        changed=true;
+        float nv = v.toFloat();
+        if(fabsf(val-nv)>0.00001){
+            val = v.toFloat();
+            changed=true;
+        }
     }
     
     virtual void preGet(){
@@ -128,7 +132,7 @@ void setUDPProperty(const char *name,float val){
             a->runValue(&p->onChange);
         }
     } else if(strcmp(name,"time"))
-        throw Exception().set("cannot find UDP property in set from remote %s",name);
+        throw RUNT(EX_NOTFOUND,"").set("cannot find UDP property in set from remote %s",name);
 }
 
 %word poll (--) send and receive queued UDP data
@@ -170,7 +174,7 @@ void setUDPProperty(const char *name,float val){
     if(p)
         p->onChange.copy(p0);
     else
-        throw Exception().set("cannot find UDP property in onchange %s",p1);
+        throw RUNT(EX_NOTFOUND,"").set("cannot find UDP property in onchange %s",p1);
 }
 
 %wordargs debug i (bool --) set debugging on messages

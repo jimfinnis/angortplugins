@@ -27,7 +27,7 @@ public:
     
     Font *get(Value *v){
         if(v->t != this)
-            throw RUNT("not a font");
+            throw RUNT(EX_TYPE,"not a font");
         return (Font *)(v->v.gc);
     }
     

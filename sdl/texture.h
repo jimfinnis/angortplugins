@@ -27,7 +27,7 @@ public:
     
     Texture *get(Value *v){
         if(v->t != this)
-            throw RUNT("not a texture");
+            throw RUNT(EX_TYPE,"not a texture");
         return (Texture *)(v->v.gc);
     }
     

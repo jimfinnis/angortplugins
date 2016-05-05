@@ -69,14 +69,14 @@ public:
     
     void check(){
         if(!mpd)
-            throw RUNT("MPD not connected");
+            throw RUNT(EX_NOTREADY,"MPD not connected");
     }
     
     void throwError(){
         char buf[1024];
         sprintf(buf,"MPD error: %s",mpd_connection_get_error_message(mpd));
         mpd_connection_clear_error(mpd);
-        throw RUNT("").set(buf);
+        throw RUNT(EX_FAILED,"").set(buf);
     }
 };
 
@@ -118,7 +118,7 @@ void makeSong(Value *out, const mpd_song *song){
                                        params[0]->toString().get(),
                                      params[1]->toInt());
     if(error)
-        throw RUNT("").set(error);
+        throw RUNT(EX_FAILED,"").set(error);
 }
 
 %word search (constraintHash exactbool -- songList) search for songs by tags
@@ -236,14 +236,14 @@ void sendAddOfNameInHash(Value *v){
     Value k;
     
     if(v->t != Types::tHash)
-        throw RUNT("song must be a hash");
+        throw RUNT(EX_TYPE,"song must be a hash");
     
     Hash *h = Types::tHash->get(v);
     
     if(Value *name = h->getSym("name"))
         mpd_send_add(conn.mpd, name->toString().get());
     else
-        throw RUNT("song hash must contain name field");
+        throw RUNT(EX_TYPE,"song hash must contain name field");
 }
 
 %word add (songlist -- ) add songs to queue
@@ -261,7 +261,7 @@ void sendAddOfNameInHash(Value *v){
         for(iter.first();!iter.isDone();iter.next()){
             sendAddOfNameInHash(iter.current());
         }
-    } else throw("inappropriate type for 'mpc$add'");
+    } else throw RUNT(EX_TYPE,"inappropriate type for 'mpc$add'");
     mpd_command_list_end(conn.mpd);
     
     if(!mpd_response_finish(conn.mpd))

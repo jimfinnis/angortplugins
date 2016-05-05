@@ -70,9 +70,9 @@ ColProperty backcol(0,0,0,255);
 
 static void chkscr(){
     if(!inited)
-        throw RUNT("SDL not initialised");
+        throw RUNT(EX_NOTREADY,"SDL not initialised");
     if(!screen)
-        throw RUNT("SDL screen not open");
+        throw RUNT(EX_NOTREADY,"SDL screen not open");
 }
 
 %word close (--) close SDL window
@@ -90,7 +90,7 @@ static void openwindow(const char *title, int w,int h,int flags){
                               SDL_WINDOWPOS_UNDEFINED,
                               w,h,flags);
     if(!screen)
-        throw RUNT("cannot open screen");
+        throw RUNT(EX_FAILED,"cannot open screen");
     renderer = SDL_CreateRenderer(screen,-1,0);
     
     backcol.set();
@@ -113,7 +113,7 @@ static void openwindow(const char *title, int w,int h,int flags){
         SDL_DisplayMode disp;
         int ret = SDL_GetCurrentDisplayMode(0,&disp);
         if(ret)
-            throw RUNT("").set("could not get video mode: %s",SDL_GetError());
+            throw RUNT(EX_FAILED,"").set("could not get video mode: %s",SDL_GetError());
         
         w = disp.w;
         h = disp.h;
