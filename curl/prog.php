@@ -28,8 +28,25 @@
   define("DBUSER","prog");
   define("DBPASS","prog");
   
+  # you'll have to tweak this to get the full URL
+#  $baseurl = "http".(!empty($_SERVER['HTTPS'])?"s":"")."://".$_SERVER['SERVER_NAME']."/prog.php";
+  
   $db = new PDO("mysql:host=localhost;dbname=prog",DBUSER,DBPASS);
   $db->setAttribute(PDO::ATTR_ERRMODE,PDO::ERRMODE_WARNING);
+  
+  if(isset($_GET['clearsess'])){
+    $sess = $_GET['clearsess'];
+    if($sess == 'all'){
+      $st = $db->prepare("delete from axes");
+      $st->execute();
+      $st = $db->prepare("delete from done");
+      $st->execute();
+    } else {
+      clearsess($_GET['clearsess']);
+    }
+    header('Location: prog.php');
+    exit();
+  }
   
   $st = $db->prepare("select distinct(session) as sess from axes");
   $st->execute();
@@ -125,18 +142,6 @@
     $st->execute();
   }
   
-  
-  if(isset($_GET['clearsess'])){
-    $sess = $_GET['clearsess'];
-    if($sess == 'all'){
-      $st = $db->prepare("delete from axes");
-      $st->execute();
-      $st = $db->prepare("delete from done");
-      $st->execute();
-    } else {
-      clearsess($_GET['clearsess']);
-    }
-  }
   
   if(isset($_POST['sessionset'])){
     $sess = $_POST['sessionset'];
