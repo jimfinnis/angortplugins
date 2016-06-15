@@ -45,7 +45,7 @@ public:
     
     Regex *get(const Value *v) const {
         if(v->t != this)
-            throw RUNT("not a regex");
+            throw RUNT(EX_TYPE,"not a regex");
         return (Regex *)(v->v.gc);
     }
     

@@ -72,12 +72,12 @@ public:
     
     FILE *getf(Value *v){
         if(v->t!=this)
-            throw RUNT("not a file");
+            throw RUNT(EX_TYPE,"not a file");
         return ((File *)(v->v.gc))->f;
     }
     File *get(Value *v){
         if(v->t!=this)
-            throw RUNT("not a file");
+            throw RUNT(EX_TYPE,"not a file");
         return (File *)(v->v.gc);
     }
     
@@ -222,10 +222,10 @@ static void dowrite(FILE *f,Value *v,bool inContainer=false){
                 fwrite(&vv->t->id,sizeof(vv->t->id),1,f);
                 dowrite(f,vv,true);
             } else
-                throw RUNT("unable to find value for key when saving hash");
+                throw RUNT(EX_CORRUPT,"unable to find value for key when saving hash");
         }
     } else {
-        throw RUNT("").set("file write of unsupported type '%s'",v->t->name);
+        throw RUNT(EX_NOTSUP,"").set("file write of unsupported type '%s'",v->t->name);
     }
 }
 
@@ -474,7 +474,7 @@ static bool readval(FILE *f,Value *res){
     } else if(typeID == Types::tHash->id) {
         doreadhash(f,res);
     } else
-        throw RUNT("").set("file read of unsupported type %x",typeID);
+        throw RUNT(EX_NOTSUP,"").set("file read of unsupported type %x",typeID);
     return true;
 }
     
@@ -485,7 +485,7 @@ static void doreadlist(FILE *f,Value *res){
     for(int i=0;i<n;i++){
         Value *v = list->append();
         if(!readval(f,v))
-            throw RUNT("").set("premature end of list read");
+            throw RUNT(EX_CORRUPT,"").set("premature end of list read");
     }
 }
 static void doreadhash(FILE *f,Value *res){
@@ -503,7 +503,7 @@ static void doreadhash(FILE *f,Value *res){
             h->set(&k,&v);
         }
     } catch(const char *s) {
-        throw RUNT("").set("badly formed hash in read on reading %s",s);
+        throw RUNT(EX_CORRUPT,"").set("badly formed hash in read on reading %s",s);
     }
 }
 

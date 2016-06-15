@@ -42,7 +42,7 @@ public:
     
     CurlWrapper *get(Value *v){
         if(v->t != this)
-            throw RUNT("").set("Expected CURL, not %s",v->t->name);
+            throw RUNT(EX_TYPE,"").set("Expected CURL, not %s",v->t->name);
         return (CurlWrapper*)(v->v.gc);
     }
     
@@ -104,23 +104,23 @@ inline const char *hgetstrdef(Hash *h,const char *s,const char *def=NULL){
 
 inline float hgetfloat(Hash *h,const char *s){
     Value *v = h->getSym(s);
-    if(!v)throw RUNT("").set("required key '%s' not found in hash",s);
+    if(!v)throw RUNT(EX_NOTFOUND,"").set("required key '%s' not found in hash",s);
     return v->toFloat();
 }
 
 inline int hgetint(Hash *h,const char *s){
     Value *v = h->getSym(s);
-    if(!v)throw RUNT("").set("required key '%s' not found in hash",s);
+    if(!v)throw RUNT(EX_NOTFOUND,"").set("required key '%s' not found in hash",s);
     return v->toInt();
 }
 inline const char *hgetstr(Hash *h,const char *s){
     Value *v = h->getSym(s);
-    if(!v)throw RUNT("").set("required key '%s' not found in hash",s);
+    if(!v)throw RUNT(EX_NOTFOUND,"").set("required key '%s' not found in hash",s);
     return v->toString().get();
 }
 inline Value *hgetsym(Hash *h,const char *s){
     Value *v = h->getSym(s);
-    if(!v)throw RUNT("").set("required key '%s' not found in hash",s);
+    if(!v)throw RUNT(EX_NOTFOUND,"").set("required key '%s' not found in hash",s);
     return v;
 }
 

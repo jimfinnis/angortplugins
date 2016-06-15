@@ -47,7 +47,7 @@ public:
     }
     
     SerialBuffer *get(Value *v){
-        if(v->t!=this)throw RUNT("not a serial buffer");
+        if(v->t!=this)throw RUNT(EX_TYPE,"not a serial buffer");
         return (SerialBuffer *)(v->v.gc);
     }
     

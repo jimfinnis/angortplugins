@@ -41,7 +41,7 @@ public:
     
     Vector2D *get(const Value *v) const {
         if(v->t!=this)
-            throw RUNT("not a Vector2D");
+            throw RUNT(EX_TYPE,"not a Vector2D");
         VectorWrapper *w = (VectorWrapper *)(v->v.gc);
         return &w->v;
     }
@@ -77,7 +77,7 @@ public:
     
     Matrix3x3 *get(Value *v){
         if(v->t!=this)
-            throw RUNT("not a Matrix3x3");
+            throw RUNT(EX_TYPE,"not a Matrix3x3");
         MatrixWrapper *w = (MatrixWrapper *)v->v.gc;
         return &w->m;
     }

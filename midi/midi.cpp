@@ -30,7 +30,7 @@ std::list<class MidiPort *> portList;
 static jack_client_t *jack=NULL;
 static void chkjack(){
     if(!jack)
-        throw RUNT("midi$open must be called");
+        throw RUNT(EX_NOTREADY,"midi$open must be called");
 }
 
 #define DATABUFSIZE 2048
@@ -55,7 +55,7 @@ public:
                                   JACK_DEFAULT_MIDI_TYPE,
                                   isInput?JackPortIsInput:JackPortIsOutput,0);
         if(!port)
-            throw RUNT("failed to register Jack port");
+            throw RUNT(EX_FAILED,"failed to register Jack port");
         portList.push_back(this);
         ct=0;
         rct=0;
@@ -66,7 +66,7 @@ public:
     
     void write(uint8_t *data,int len){
         if(ct+len+1 >= DATABUFSIZE)
-            throw RUNT("out of space in write buffer");
+            throw RUNT(EX_NOMEM,"out of space in write buffer");
         pthread_mutex_lock(&mutex);
         dataBuffer[ct++]=len;
         memcpy(dataBuffer+ct,data,len);
@@ -118,7 +118,7 @@ public:
     
     MidiPort *get(Value *v){
         if(v->t != this)
-            throw RUNT("not a midiport");
+            throw RUNT(EX_TYPE,"not a midiport");
         return (MidiPort *)v->v.gc;
     }
     
@@ -192,7 +192,7 @@ static void jack_shutdown(void *arg){
     a->popParams(&p,"s");
     jack = jack_client_open(p->toString().get(),JackNullOption,NULL);
     if(!jack)
-        throw RUNT("Jack client creation failed.");
+        throw RUNT(EX_FAILED,"Jack client creation failed.");
     jack_on_shutdown(jack,jack_shutdown,0);
     jack_set_process_callback(jack,process,0);
     jack_activate(jack);
@@ -265,7 +265,7 @@ static void jack_shutdown(void *arg){
     
     MidiPort *p = tMidiPort.get(params[3]);
     if(p->isInput)
-        throw RUNT("attempt to write to input port");
+        throw RUNT(EX_TYPE,"attempt to write to input port");
     
     uint8_t data[3];
     data[0]=144+chan;
@@ -286,7 +286,7 @@ static void jack_shutdown(void *arg){
     MidiPort *p = tMidiPort.get(params[2]);
     chkjack();
     if(p->isInput)
-        throw RUNT("attempt to write to input port");
+        throw RUNT(EX_TYPE,"attempt to write to input port");
     
     uint8_t data[3];
     data[0]=128+chan;
@@ -306,7 +306,7 @@ static void jack_shutdown(void *arg){
     
     chkjack();
     if(p->isInput)
-        throw RUNT("attempt to write to input port");
+        throw RUNT(EX_TYPE,"attempt to write to input port");
     
     uint8_t data[3];
     data[0]=(0b10110000)+chan;
@@ -365,7 +365,7 @@ static void stackPorts(Angort *a,const char **q){
             ct=0;
             if(p->ct){
                 if(p->ct+p->rct >= DATABUFSIZE)
-                    throw RUNT("").set("MIDI input port secondary buffer out of data. Are you polling?");
+                    throw RUNT(EX_NOMEM,"").set("MIDI input port secondary buffer out of data. Are you polling?");
                 ct=p->ct;
                 memcpy(rbuf,p->dataBuffer,ct);
                 p->ct=0;
@@ -386,7 +386,7 @@ static void stackPorts(Angort *a,const char **q){
     a->popParams(p,"ac",&tMidiPort);
     MidiPort *port = tMidiPort.get(p[0]);
     if(!port->isInput)
-        throw RUNT("cannot set event on output port");
+        throw RUNT(EX_TYPE,"cannot set event on output port");
     port->onNoteOn.copy(p[1]);
 }
 %word onnoteoff (inport callable --) set a function of type (chan note vel--) for noteoff
@@ -395,7 +395,7 @@ static void stackPorts(Angort *a,const char **q){
     a->popParams(p,"ac",&tMidiPort);
     MidiPort *port = tMidiPort.get(p[0]);
     if(!port->isInput)
-        throw RUNT("cannot set event on output port");
+        throw RUNT(EX_TYPE,"cannot set event on output port");
     port->onNoteOff.copy(p[1]);
 }
 %word oncc (inport callable --) set a function of type (chan ctor val--) for CC
@@ -404,7 +404,7 @@ static void stackPorts(Angort *a,const char **q){
     a->popParams(p,"ac",&tMidiPort);
     MidiPort *port = tMidiPort.get(p[0]);
     if(!port->isInput)
-        throw RUNT("cannot set event on output port");
+        throw RUNT(EX_TYPE,"cannot set event on output port");
     port->onCC.copy(p[1]);
 }
 
