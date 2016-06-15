@@ -22,16 +22,15 @@ template <class T>
 class WrapperType : public GCType {
 public:
     WrapperType(const char *nameid){
-        char buf1[128],buf2[128];
-        if(strlen(nameid)!=4)throw RUNT("type wrapper name length must=4");
+        if(strlen(nameid)!=4)throw RUNT(EX_BADPARAM,"type wrapper name length must=4");
         add(nameid,nameid);
     }
     
     T *get(Value *v){
         if(!v)
-            throw RUNT("").set("Expected %s, not a null object",name);
+            throw RUNT(EX_TYPE,"").set("Expected %s, not a null object",name);
         if(v->t!=this)
-            throw RUNT("").set("Expected %s, not %s",name,v->t->name);
+            throw RUNT(EX_TYPE,"").set("Expected %s, not %s",name,v->t->name);
         return ((Wrapper<T> *)(v->v.gc))->base;
     }
     
