@@ -30,6 +30,11 @@ using namespace angort;
     a->pushString(buf);
 }
 
+%wordargs chdir s (path -- success)
+{
+    a->pushInt((chdir(p0)<0)?0:1);
+}
+
 %word getpid (-- PID)
 {
     a->pushInt(getpid());
