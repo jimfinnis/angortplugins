@@ -23,15 +23,6 @@ using namespace angort;
     usleep((int)(p->toFloat()*1.0e6f));
 }
 
-%wordargs getenv s (name -- str or none)
-{
-    const char *s = getenv(p0);
-    if(s)
-        a->pushString(s);
-    else
-        a->pushNone();
-}
-
 %word cwd (-- working directory)
 {
     char buf[PATH_MAX];
