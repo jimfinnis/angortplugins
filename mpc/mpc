@@ -4,7 +4,7 @@ package mpcc
 
 [`sys,`mpc,`id3,`io] each { i library drop}
 
-"HOME" sys$getenv !Home
+"HOME" getenv !Home
 
 :connect
     none 0 mpc$connect;

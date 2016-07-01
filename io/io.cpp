@@ -139,7 +139,9 @@ FileIterator::~FileIterator(){
 }
 
 void FileIterator::first() {
-    fseek(file->f,0L,SEEK_SET);
+    // we don't rewind the iterator at the start, to allow
+    // us to skip initial lines etc.
+//    fseek(file->f,0L,SEEK_SET);
     next();
 }
 
@@ -234,13 +236,19 @@ static void dowrite(FILE *f,Value *v,bool inContainer=false){
     p0->close();
 }
 
-
 static FILE *getf(Value *p,bool out){
     if(p->isNone())
         return out?stdout:stdin;
     else
         return tFile.getf(p);
 }
+
+%wordargs rewind A|file (fileobj --) reset file to start, to allow reiteration
+{
+    fseek(p0->f,0L,SEEK_SET);
+}
+
+
 
 %word write (value fileobj/none --) write value as binary (int/float is 32 bits) to file or stdout
 {
