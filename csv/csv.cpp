@@ -110,7 +110,7 @@ static ArrayList<char*> *splitLine(const char *s,const char delim,int maxCols=0)
     return &list;
 }
 
-class CSV : public GarbageCollected {
+class CSV  {
     int numCols;
     const char **colNames;
     bool noHead;
