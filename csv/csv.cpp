@@ -111,8 +111,6 @@ static ArrayList<char*> *splitLine(const char *s,const char delim,int maxCols=0)
 }
 
 class CSV  {
-    int numCols;
-    const char **colNames;
     bool noHead;
     int skipLines;
     bool createList;
@@ -128,6 +126,9 @@ class CSV  {
     
     
 public:
+    int numCols;
+    const char **colNames;
+    
     CSV(Hash *h){ // settings hash
         Value *v;
         colNames=NULL;
@@ -165,7 +166,6 @@ public:
     }
     
     virtual ~CSV(){
-        printf("Destuctor\n");
         if(colNames)
             delete colNames;
         if(types)
@@ -206,7 +206,6 @@ public:
                     colNames[i] = strdup(buf);
                 } else
                     colNames[i] = strdup(*iter.current());
-                printf("Col %d: %s\n",i,colNames[i]);
             }
         } else {
             ArrayList<char *> *l = splitLine(s,delim,numCols);
@@ -286,6 +285,20 @@ static WrapperType<CSV> tCSV("CSVT");
     Value v;
     p1->line(&v,p0);
     a->pushval()->copy(&v);
+}
+
+%wordargs cols A|csv (csv -- list|none) get list of cols if present, or none.
+{
+    if(!p0->colNames){
+        a->pushNone();
+    } else {
+        ArrayList<Value> *out = Types::tList->set(a->pushval());
+        for(int i=0;i<p0->numCols;i++){
+            Value *v = out->append();
+            Types::tString->set(v,p0->colNames[i]);
+        }
+    }
+    
 }
 
 %wordargs parseline si (s maxcols -- list) parse a single comma-separated line
