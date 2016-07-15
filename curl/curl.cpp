@@ -135,12 +135,12 @@ inline Value *hgetsym(Hash *h,const char *s){
     curl_global_cleanup();
 }
 
-%word make
+%word make (-- curl) make a curl object, need this to do anything. Then setopt and perform with it.
 {
     tCurl.set(a->pushval());
 }
 
-%word setopt (curl hash -- curl) set opts in curl
+%word setopt (curl hash -- curl) set opts in curl (supported: `url, `post)
 {
     Hash *p1 = Types::tHash->get(a->popval());
     CurlWrapper *p0 = tCurl.get(a->stack.peekptr());
@@ -186,7 +186,7 @@ inline Value *hgetsym(Hash *h,const char *s){
     delete iter;
 }
 
-%wordargs perform A|curl (curl -- error|none) perform the transfer
+%wordargs perform A|curl (curl -- error|none) perform the transfer, use "data" to get the data
 {
     CURLcode rv = curl_easy_perform(p0->c);
     if(rv == CURLE_OK)

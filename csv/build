@@ -1,0 +1,11 @@
+#!/bin/bash
+source ../base.sh
+
+makewords csv
+
+g++ -fPIC -g -c -Wall csv.plugin.cpp 
+
+g++ -shared -Wl,-soname,csv.angso \
+    -o ../libs/csv.angso \
+    csv.plugin.o
+

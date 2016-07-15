@@ -2,7 +2,7 @@
 
 package mpcc
 
-[`sys,`mpc,`id3,`io] each { i library drop}
+[`curl,`time,`regex, `sys,`mpc,`id3,`io] each { i library drop}
 
 "HOME" getenv !Home
 
@@ -405,6 +405,96 @@ global list # force a new definition in this namespace
 # add words here for your standard connections
 :pi "pi" 0 mpc$connect;
 :cran "cranberry" 0 mpc$connect;
+
+
+
+# experimental stuff for mp3/shoutcast
+
+:addmp3 |n:|
+    [%
+     `name ?n,
+     `album "Radio",
+     `title ?n
+     ]
+    mpc$add
+;
+
+# this works OK for radio 3!
+:addshoutcast |n:rxFile,rxTitle,filelist,titlelist,t,curl|
+    "File.*" regex$compile !rxFile
+    "Title.*" regex$compile !rxTitle
+    [] !filelist
+    [] !titlelist
+    
+    # first, grab the curl file
+    try
+        curl$make !curl
+        ?curl
+        [%
+         `url ?n
+         ]
+        curl$setopt curl$perform
+        isnone not if "cannot open URL" `scerror throw then
+        
+        ?curl curl$data "\n" split 
+        each {
+            cases
+                i ?rxFile regex$match len if
+                    i "=" split !t
+                    ?t shift 4 -1 substr toint !n
+                    ?t "=" intercalate ?n ?filelist set
+                case
+                i ?rxTitle regex$match len if
+                    i "=" split !t
+                    ?t shift 5 -1 substr toint !n
+                    ?t "=" intercalate ?n ?titlelist set
+                case
+            otherwise
+        }
+            
+        ?filelist ?titlelist (|a,b:| 
+            [%
+             `name ?a,
+             `title ?b]
+        ) zipWith
+        (?`name isnone not)filter
+         
+        each{
+            "adding " std$p i?`name .
+            i add}
+    catch :scerror
+        "Error : " std$p
+        drop .
+    endtry
+;
+
+# special radio stations!
+
+:radio3
+    clr 
+    "http://open.live.bbc.co.uk/mediaselector/5/select/version/2.0/mediaset/http-icy-aac-lc-a/format/pls/vpid/bbc_radio_three.pls"
+    addshoutcast p
+;
+
+:divline
+    clr
+    "http://thedividingline.com:8000/dlbn.mp3"
+    addmp3 p
+;
+
+:progzilla
+    clr "http://stream1.hippynet.co.uk:8005/live"
+    addmp3 p
+;
+
+# live streaming from darkice->icecast2 on terence.
+# See StreamingAudioToPi on terence, but the basics are
+# to run darkice -c darkice.cfg in that directory before
+# running this.
+:terence
+    clr "http://192.168.2.10:8000/terence"
+    addmp3 p
+;
 
 endpackage import
 
