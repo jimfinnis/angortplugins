@@ -156,14 +156,16 @@ public:
         delim = hgetstrdef(h,"delimiter",",")[0];
         
         // types
-        types = strdup(hgetstrdef(h,"types",NULL));
+        types = hgetstrdef(h,"types",NULL);
         if(types && !*types)types=NULL; // don't allow empty str.
         if(types){
+            types=strdup(types);
             numTypes = strlen(types);
         }
     }
     
-    ~CSV(){
+    virtual ~CSV(){
+        printf("Destuctor\n");
         if(colNames)
             delete colNames;
         if(types)
@@ -197,8 +199,14 @@ public:
             colNames = new const char *[numCols];
             ArrayListIterator<char*> iter(l);
             int i=0;
-            for(iter.first();!iter.isDone();iter.next()){
-                colNames[i++] = strdup(*iter.current());
+            for(iter.first();!iter.isDone();iter.next(),i++){
+                if(!strlen(*iter.current())){
+                    char buf[256];
+                    sprintf(buf,"V%d",i);
+                    colNames[i] = strdup(buf);
+                } else
+                    colNames[i] = strdup(*iter.current());
+                printf("Col %d: %s\n",i,colNames[i]);
             }
         } else {
             ArrayList<char *> *l = splitLine(s,delim,numCols);
@@ -256,6 +264,7 @@ public:
         }
     }
 };
+
 
 static WrapperType<CSV> tCSV("CSVT");
 

@@ -1,8 +1,11 @@
 "../libs/csv" library drop
-require "util.ang" drop
+#require "util.ang" drop
 
-[%`list 0,`nohead 1, `types "f"] csv$make !C
+[%] csv$make !C gc
+quit
+[%`list 0, `nohead 1, `types "f"] csv$make !C gc
 "foo,bar,baz" ?C csv$line util$show.
 "biz,100,foz,foo" ?C csv$line util$show.
 "biz,100,foz,foo" ?C csv$line util$show.
 
+gc
