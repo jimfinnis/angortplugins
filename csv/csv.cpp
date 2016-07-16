@@ -7,15 +7,21 @@
  * csv$line handles a line in the CSV, typically read from a file,
  *     and returns a hash, list or none (if header or skip line
  *     was fed in).
+ * csv$read reads the entire named file into a list of hashes or lists.
  * csv$cols returns the columns list.
  * 
  * Make hash parameters:
  *   `columns is a list of column names, which implies the csv has no header
- *   `list if true forces the output to be lists
+ *          (default none)
+ *   `list if true forces the output to be lists (default false)
  *   `nohead ignores the header even if no col names are given
- *           (names will be invented if the output is a hash)
- *   `skip defines a number of lines to ignore at the start
- *   `delimiter sets a delimiting character
+ *          (names will be invented if the output is a hash)
+ *          (default false)
+ *   `skip defines a number of lines to ignore at the start (default zero)
+ *   `delimiter sets a delimiting character (default ",")
+ *   `partial if true will allow rows with less than the number of columns
+ *          to be accepted, with list/hash entries created for the number
+ *          present. (default false).
  *   `types sets a column type string consisting of the chars "i",
  *          "f" or "s" (int,float,string). If only one char is 
  *          provided, it's used for all cols. Otherwise the char
@@ -111,16 +117,20 @@ static ArrayList<char*> *splitLine(const char *s,const char delim,int maxCols=0)
 }
 
 class CSV  {
-    bool noHead;
-    int skipLines;
-    bool createList;
-    char delim;
+    bool noHead; // has no header - either set columns or it will invent them
+    int skipLines; // skip N lines 
+    bool createList; // create lists for each row, not hashes
+    bool partial; // permit partial lines
+    char delim; // delimiter
+    
     // if true, holds a string of column type chars. These are
     // s=str,f=float,i=int. If missing, all cols are strings.
     // If too short, is modded over i.e. so that a single "f" means all
     // cols are float.
     const char *types; 
+    
     int numTypes; // only valid if above is nonnull
+    
     // the actual data, PER LINE. It's either a hash or a list.
     Value linev;
     
@@ -156,6 +166,9 @@ public:
         // delimiter
         delim = hgetstrdef(h,"delimiter",",")[0];
         
+        // partial lines accepted?
+        partial = hgetintdef(h,"partial",0)!=0;
+        
         // types
         types = hgetstrdef(h,"types",NULL);
         if(types && !*types)types=NULL; // don't allow empty str.
@@ -172,11 +185,15 @@ public:
             free((void *)types);
     }
     
-    // process a line of input and set the value accordingly
+    // process a line of input and set the value accordingly. Will throw
+    // away items created from partial output if "partial" is not set
     void line(Value *linev,const char *s){
+        int numitems=0;
+        
         // are we skipping?
-        if(skipLines--){
+        if(skipLines && skipLines--){
             linev->clr();
+            return;
         }
         
         if(!colNames && noHead){
@@ -216,6 +233,7 @@ public:
                 for(iter.first();!iter.isDone();iter.next(),i++){
                     char *s = *iter.current();
                     Value *vout = out->append();
+                    numitems++;
                     if(types){
                         switch(types[i%numTypes]){
                         case 'i':
@@ -257,10 +275,16 @@ public:
                         Types::tString->set(&vout,s);
                     }
                     out->setSym(colNames[i],&vout);
+                    numitems++;
                 }
-                
             }
         }
+        // if we didn't get at least the right number of items,
+        // ignore what we just read. Of course, numitems is never
+        // greater than cols because of lines being split into at
+        // maximum cols columns.
+        if(!partial && (numitems != numCols))
+            linev->clr();
     }
 };
 
@@ -285,6 +309,30 @@ static WrapperType<CSV> tCSV("CSVT");
     Value v;
     p1->line(&v,p0);
     a->pushval()->copy(&v);
+}
+
+%wordargs read As|csv (csv filename -- list|none) parse an entire file
+{
+    FILE *f = fopen(p1,"r");
+    if(!f){
+        a->pushNone();
+    } else {
+        Value listv,linev;
+        ArrayList<Value> *list=Types::tList->set(&listv);
+        char buf[8192];
+        while(fgets(buf,8192,f)){
+            int l=strlen(buf);
+            if(l){
+                buf[l-1]=0;
+                p0->line(&linev,buf);
+                if(!linev.isNone()){
+                    list->append()->copy(&linev);
+                }
+            }
+        }
+        fclose(f);
+        a->pushval()->copy(&listv);
+    }
 }
 
 %wordargs cols A|csv (csv -- list|none) get list of cols if present, or none.
