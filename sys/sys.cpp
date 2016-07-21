@@ -55,10 +55,18 @@ using namespace angort;
     execv(p1,args);
 }
 
+static int exitcode=0;
 %wordargs system s (string --)
 {
-    system(p0);
+    exitcode=system(p0);
 }
+
+%word getexit (-- exitcode) get exit code of prev. system call
+{
+    a->pushInt(exitcode);
+}
+
+
 
 %init
 {
