@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <sys/types.h>
+#include <dirent.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <ctype.h>
@@ -528,6 +529,39 @@ static void doreadhash(FILE *f,Value *res){
     a->popParams(&p,"A",&tFile);
     FILE *f = getf(p,false);
     doreadhash(f,a->pushval());
+}
+
+%wordargs isdir s (path -- boolean/none) is the path a directory? None indicates doesn't exist.
+{
+    struct stat b;
+    if(stat(p0,&b)==0){
+        a->pushInt((b.st_mode & S_IFDIR)?1:0);
+    } else
+        a->pushNone();
+}
+
+%wordargs readdir s (path -- list/none) read a directory returning a hash of names-> type symbols
+{
+    DIR *d = opendir(p0);
+    if(!d)
+        a->pushNone();
+    else {
+        Hash* h = Types::tHash->set(a->pushval());
+        while(dirent *e = readdir(d)){
+            const char *t;
+            switch(e->d_type){
+            case DT_BLK:t="blockdev";break;
+            case DT_CHR:t="chardev";break;
+            case DT_DIR:t="dir";break;
+            case DT_FIFO:t="fifo";break;
+            case DT_LNK:t="symlink";break;
+            case DT_REG:t="file";break;
+            case DT_SOCK:t="sock";break;
+            default:t="unknown";break;
+            }
+            h->setSymSym(e->d_name,t);
+        }
+    }
 }
 
 %word exists (path -- boolean/none) does a file/directory exist? None indicates some other problem
