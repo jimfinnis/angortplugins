@@ -1,0 +1,13 @@
+#!/bin/bash
+source ../base.sh
+
+makewords diamond
+
+g++ -fPIC -g -c -Wall diamond.plugin.cpp 
+
+g++ -fPIC -shared -Wl,-soname,diamond.angso \
+    -o ../libs/diamond.angso \
+    diamond.plugin.o \
+    -ldiamondapparatus -lpthread
+    
+

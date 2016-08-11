@@ -4,7 +4,7 @@
 
 ./buildall
 
-for d in mpc sdl midi serial vector2d udp curl
+for d in mpc sdl midi serial vector2d udp curl diamond
 do
     echo $d
     cd $d
