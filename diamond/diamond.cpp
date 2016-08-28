@@ -13,11 +13,16 @@ using namespace angort;
 %shared
 
 %wordargs subscribe s (name --) subscribe to a topic
+Sends a message to subscribe to a topic - subsequent
+get calls will return data on that topic.
 {
     diamondapparatus::subscribe(p0);
 }
 
 %wordargs publish ls (list name --) publish list to a topic
+Sends a message containing topic data. This should be a list of
+floats or strings. Subscribers will receive a message with the
+new data.
 {
     using namespace diamondapparatus;
     
@@ -59,21 +64,28 @@ inline void doGet(Angort *a,const char *name, int flags){
 }
 
 %wordargs getwaitany s (name -- list) get a topic (waiting for any data)
+Get data on a topic, waiting only if there is no data yet. Existing
+data values will be returned if no message has been received since the
+last get.
 {
     doGet(a,p0,GET_WAITANY);
 }
 
 %wordargs getwaitnew s (name -- list) get a topic (waiting for new data)
+Get data on a topic, waiting for new data to arrive.
 {
     doGet(a,p0,GET_WAITNEW);
 }
 
 %wordargs getnowait s (name -- list/none) get a topic (no wait)
+Get data on a topic, even if there is no data yet (will return
+none in this case).
 {
     doGet(a,p0,0);
 }
 
 %word waitany (--)
+Wait for new data to be received on any topic to which I am subscribed.
 {
     diamondapparatus::waitForAny();
 }
