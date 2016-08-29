@@ -1,8 +1,12 @@
 "io" library import
 
-"io.cpp" "r" open !F
-?F readstr drop
-?F each {i.}
-?F rewind
-?F each {i.} quit
-quit
+"foo" createfd !L
+
+
+:l ?L lock;
+:u ?L unlock;
+
+:c ?L closefd;
+
+
+    

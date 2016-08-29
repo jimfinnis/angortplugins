@@ -11,9 +11,11 @@
 #include <sys/types.h>
 #include <dirent.h>
 #include <sys/stat.h>
+#include <sys/file.h>
 #include <unistd.h>
 #include <ctype.h>
 #include <errno.h>
+#include <fcntl.h>
 
 #include <angort/angort.h>
 #include <angort/hash.h>
@@ -632,6 +634,33 @@ static void doreadhash(FILE *f,Value *res){
     }
     tFile.set(a->pushval(),stderrf);
 }
+
+%wordargs createfd s (name -- fd) create a file
+This just creates an empty file of the given name, it's often
+used in association with "lock". It will truncate any existing
+file! The file descriptor is returned.
+{
+    int fd  = open(p0,O_RDWR|O_CREAT|O_TRUNC,S_IRWXU);
+    a->pushInt(fd);
+}
+
+%wordargs closefd i (fd --) close a file created with createfd
+{
+    close(p0);
+}
+
+%wordargs lock i (fd --) lock a file created with createfd
+Uses flock() to lock the file for exclusive use by this process.
+{
+    flock(p0,LOCK_EX);
+}
+
+%wordargs unlock i (fd --) unlock a file created with createfd
+Uses flock() to unlock the file for exclusive use by this process.
+{
+    flock(p0,LOCK_UN);
+}
+
 
 %init
 {
