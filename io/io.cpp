@@ -177,6 +177,11 @@ Iterator<class Value *> *File::makeValueIterator(){
 
 
 %word open (path mode -- fileobj) open a file, modes same as fopen()
+Open a file given the path and the mode. Both are send directly to
+fopen(), so see the manual page for that function. A garbage-collected
+file object is pushed onto the stack, or None if the file could not
+be opened. The file will be closed when the object is deleted or
+closed (see "close").
 {
     Value *p[2];
     a->popParams(p,"ss");
@@ -235,6 +240,8 @@ static void dowrite(FILE *f,Value *v,bool inContainer=false){
 }
 
 %wordargs close A|file (fileobj --) close file (also done on delete)
+Close a file manually. This is also done when the file object is deleted
+due to zero references.
 {
     p0->close();
 }
@@ -247,6 +254,8 @@ static FILE *getf(Value *p,bool out){
 }
 
 %wordargs rewind A|file (fileobj --) reset file to start, to allow reiteration
+Reset the position of the file to the start, typically used for 
+iterating over the lines of a file a second time with "each".
 {
     fseek(p0->f,0L,SEEK_SET);
 }
@@ -254,6 +263,11 @@ static FILE *getf(Value *p,bool out){
 
 
 %word write (value fileobj/none --) write value as binary (int/float is 32 bits) to file or stdout
+Write a value of any writable type to the file, as an appropriate type.
+Best used to write lists and hashes which can be read with "readlist"
+and "readhash". NOTE: writing a hash or list containing a cycle will
+result in an attempt at infinite recursion, resulting in a huge file
+being written until the system stack overflows.
 {
     Value *p[2];
     a->popParams(p,"vA",&tFile);
@@ -262,6 +276,7 @@ static FILE *getf(Value *p,bool out){
 }
 
 %word write8 (value fileobj/none --) write signed byte
+Write a signed byte, having cast the value to an int.
 {
     Value *p[2];
     a->popParams(p,"nA",&tFile);
@@ -270,6 +285,7 @@ static FILE *getf(Value *p,bool out){
 }
 
 %word write16 (value fileobj/none --) write 16-bit signed integer
+Write a signed 16-bit integer, having cast the value to an int.
 {
     Value *p[2];
     a->popParams(p,"nA",&tFile);
@@ -278,6 +294,7 @@ static FILE *getf(Value *p,bool out){
 }    
 
 %word write32 (value fileobj/none --) write 32-bit signed integer
+Write a signed 32-bit integer, having cast the value to an int.
 {
     Value *p[2];
     a->popParams(p,"nA",&tFile);
@@ -286,6 +303,7 @@ static FILE *getf(Value *p,bool out){
 }    
 
 %word writeu8 (value fileobj/none --) write unsigned byte
+Write an unsigned byte, having cast the value to an int.
 {
     Value *p[2];
     a->popParams(p,"nA",&tFile);
@@ -294,6 +312,7 @@ static FILE *getf(Value *p,bool out){
 }
 
 %word writeu16 (value fileobj/none --) write 16-bit unsigned integer
+Write a unsigned 16-bit integer, having cast the value to an int.
 {
     Value *p[2];
     a->popParams(p,"nA",&tFile);
@@ -302,6 +321,7 @@ static FILE *getf(Value *p,bool out){
 }    
 
 %word writeu32 (value fileobj/none --) write 32-bit unsigned integer
+Write a unsigned 32-bit integer, having cast the value to an int.
 {
     Value *p[2];
     a->popParams(p,"nA",&tFile);
@@ -310,6 +330,7 @@ static FILE *getf(Value *p,bool out){
 }    
 
 %word writefloat (value fileobj/none --) write 32-bit float
+Write a 32-bit float to a file.
 {
     Value *p[2];
     a->popParams(p,"nA",&tFile);
@@ -318,6 +339,7 @@ static FILE *getf(Value *p,bool out){
 }    
 
 %word readfloat (fileobj/none -- float/none) read 32-bit float
+Read a 32-bit float from a file.
 {
     Value *p;
     float i;
@@ -330,6 +352,8 @@ static FILE *getf(Value *p,bool out){
 }
 
 %word writedouble (value fileobj/none --) write 64-bit float
+Write a 64-bit float to a file, from a 32-bit float value (the only
+float type currently supported without a library).
 {
     Value *p[2];
     a->popParams(p,"nA",&tFile);
@@ -338,6 +362,8 @@ static FILE *getf(Value *p,bool out){
 }    
 
 %word readdouble (fileobj/none -- float/none) read 64-bit float
+Read a 64-bit float from a file into a 64-bit float value (the only
+float type currently supported without a library).
 {
     Value *p;
     double i;
@@ -350,6 +376,7 @@ static FILE *getf(Value *p,bool out){
 }
 
 %word read8 (fileobj/none -- int/none) read signed byte
+Read a signed byte, converting to an integer.
 {
     Value *p;
     int8_t i;
@@ -364,6 +391,7 @@ static FILE *getf(Value *p,bool out){
     }
 }
 %word read16 (fileobj/none -- int/none) read 16-bit signed int
+Read a 16-bit signed integer, converting to an integer.
 {
     Value *p;
     int16_t i;
@@ -375,6 +403,7 @@ static FILE *getf(Value *p,bool out){
         a->pushNone();
 }
 %word read32 (fileobj/none -- int/none) read 32-bit signed int
+Read a 32-bit signed integer, converting to an integer.
 {
     Value *p;
     int32_t i;
@@ -387,6 +416,7 @@ static FILE *getf(Value *p,bool out){
 }
 
 %word readu8 (fileobj/none -- int/none) read unsigned byte
+Read an unsigned byte, converting to an integer.
 {
     Value *p;
     uint8_t i;
@@ -398,6 +428,7 @@ static FILE *getf(Value *p,bool out){
         a->pushNone();
 }
 %word readu16 (fileobj/none -- int/none) read 16-bit unsigned int
+Read a 16-bit unsigned integer, converting to an integer.
 {
     Value *p;
     uint16_t i;
@@ -409,6 +440,8 @@ static FILE *getf(Value *p,bool out){
         a->pushNone();
 }
 %word readu32 (fileobj/none -- int/none) read 32-bit unsigned int
+Read a 32-bit unsigned integer, converting to an signed integer (largely
+pointless!)
 {
     Value *p;
     uint32_t i;
@@ -423,6 +456,9 @@ static FILE *getf(Value *p,bool out){
 
 
 %word readstr (fileobj/none -- str) read string until null/EOL/EOF
+Read a string from a file, terminated by a null, the end of file, or
+the end of a line. The end of line character will not be included in
+the result.
 {
     Value *p;
     a->popParams(&p,"A",&tFile);
@@ -434,6 +470,7 @@ static FILE *getf(Value *p,bool out){
 }
 
 %word readfilestr (fileobj/none -- str) read an entire text file
+Read an entire text file into a string.
 {
     Value *p;
     a->popParams(&p,"A",&tFile);
@@ -445,6 +482,7 @@ static FILE *getf(Value *p,bool out){
 }
 
 %word eof (fileobj/none -- boolean) indicates if EOF has been read
+Return nonzero if the end of a file has been reached.
 {
     Value *p;
     a->popParams(&p,"A",&tFile);
@@ -519,6 +557,7 @@ static void doreadhash(FILE *f,Value *res){
 }
 
 %word readlist (fileobj/none -- list) read a binary list (as written by 'write')
+Read a list written by "write", returning the list.
 {
     Value *p;
     a->popParams(&p,"A",&tFile);
@@ -526,6 +565,7 @@ static void doreadhash(FILE *f,Value *res){
     doreadlist(f,a->pushval());
 }
 %word readhash (fileobj/none -- hash) read a binary hash (as written by 'write')
+Read a hash written by "write", returning the list.
 {
     Value *p;
     a->popParams(&p,"A",&tFile);
@@ -534,6 +574,8 @@ static void doreadhash(FILE *f,Value *res){
 }
 
 %wordargs isdir s (path -- boolean/none) is the path a directory? None indicates doesn't exist.
+Return nonzero if the path is a directory, or None if the path cannot
+be accessed.
 {
     struct stat b;
     if(stat(p0,&b)==0){
@@ -542,7 +584,11 @@ static void doreadhash(FILE *f,Value *res){
         a->pushNone();
 }
 
-%wordargs readdir s (path -- list/none) read a directory returning a hash of names-> type symbols
+%wordargs readdir s (path -- hash/none) read a directory returning a hash of names-> type symbols
+Read a directory, returning a hash or None if the directory cannot
+be opened. Inside the hash, the keys are the entry names and the values
+are the types: `blockdev, `chardev, `dir, `fifo, `symlink, `file, `sock
+or `unknown.
 {
     DIR *d = opendir(p0);
     if(!d)
@@ -567,6 +613,8 @@ static void doreadhash(FILE *f,Value *res){
 }
 
 %word exists (path -- boolean/none) does a file/directory exist? None indicates some other problem
+Return nonzero if the path exists, zero if not, and None if there is a
+problem accessing the parent directory.
 {
     Value *p;
     a->popParams(&p,"s");
@@ -581,6 +629,8 @@ static void doreadhash(FILE *f,Value *res){
 }
 
 %word flush (fileobj/none -- ) flush the file buffer
+Flushes the file's buffer, which may occasionally be necessary since
+we're using buffered (fopen()) IO.
 {
     Value *p;
     a->popParams(&p,"A",&tFile);
@@ -589,6 +639,10 @@ static void doreadhash(FILE *f,Value *res){
 }
 
 %word stat (path -- hash/none) read the file statistics, or none if not found
+Run stat() on a path, returning None if this causes an error, or a hash
+containing the following keys (with appropriate values): `mode, `uid, `gid,
+`size, `atime, `mtime, `ctime. See the manual page for stat(2) for more
+details.
 {
     Value *p;
     a->popParams(&p,"s");
@@ -611,6 +665,7 @@ static void doreadhash(FILE *f,Value *res){
 }
 
 %word stdin (-- stdin) stack shared stdin object
+Stack the shared file object representing the standard input stream.
 {
     if(!stdinf){
         stdinf=new File(stdin);stdinf->noclose=true;
@@ -619,6 +674,7 @@ static void doreadhash(FILE *f,Value *res){
     tFile.set(a->pushval(),stdinf);
 }
 %word stdout (-- stdout) stack shared stdout object
+Stack the shared file object representing the standard output stream.
 {
     if(!stdoutf){
         stdoutf=new File(stdout);stdoutf->noclose=true;
@@ -627,6 +683,7 @@ static void doreadhash(FILE *f,Value *res){
     tFile.set(a->pushval(),stdoutf);
 }
 %word stderr (-- stderr) stack shared stderr object
+Stack the shared file object representing the standard error stream.
 {
     if(!stderrf){
         stderrf=new File(stderr);stderrf->noclose=true;
