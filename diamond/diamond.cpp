@@ -7,6 +7,7 @@
 #include "angort/angort.h"
 #include "diamondapparatus/diamondapparatus.h"
 
+#define THROWDIAMOND(e) throw RUNT("ex$diamond",e.what())
 using namespace angort;
 
 %name diamond
@@ -16,7 +17,11 @@ using namespace angort;
 Sends a message to subscribe to a topic - subsequent
 get calls will return data on that topic.
 {
-    diamondapparatus::subscribe(p0);
+    try {
+        diamondapparatus::subscribe(p0);
+    } catch(diamondapparatus::DiamondException d){
+        THROWDIAMOND(d);
+    }
 }
 
 %wordargs publish ls (list name --) publish list to a topic
@@ -26,41 +31,50 @@ new data.
 {
     using namespace diamondapparatus;
     
-    ArrayListIterator<Value> iter(p0);
-    Topic t;
-    for(iter.first();!iter.isDone();iter.next()){
-        Value *v = iter.current();
-        if(v->t == Types::tFloat || v->t == Types::tInteger){
-            t.add(Datum(v->toFloat()));
-        } else {
-            t.add(Datum(v->toString().get()));
+    try{
+        ArrayListIterator<Value> iter(p0);
+        Topic t;
+        for(iter.first();!iter.isDone();iter.next()){
+            Value *v = iter.current();
+            if(v->t == Types::tFloat || v->t == Types::tInteger){
+                t.add(Datum(v->toFloat()));
+            } else {
+                t.add(Datum(v->toString().get()));
+            }
         }
+        publish(p1,t);
+    } catch(diamondapparatus::DiamondException d){
+        THROWDIAMOND(d);
     }
-    publish(p1,t);
 }
 
 inline void doGet(Angort *a,const char *name, int flags){
     using namespace diamondapparatus;
     
-    Topic t = get(name,flags);
-    
-    if(t.isValid()){
-        ArrayList<Value> *list = Types::tList->set(a->pushval());
-        for(int i=0;i<t.size();i++){
-            switch(t[i].t){
-            case DT_FLOAT:
-                Types::tFloat->set(list->append(),t[i].f());
-                break;
-            case DT_STRING:
-                Types::tString->set(list->append(),t[i].s());
-                break;
-            default:
-                throw "unsupported type";
+    try{
+        Topic t = get(name,flags);
+        
+        if(t.isValid()){
+            ArrayList<Value> *list = Types::tList->set(a->pushval());
+            for(int i=0;i<t.size();i++){
+                switch(t[i].t){
+                case DT_FLOAT:
+                    Types::tFloat->set(list->append(),t[i].f());
+                    break;
+                case DT_STRING:
+                    Types::tString->set(list->append(),t[i].s());
+                    break;
+                default:
+                    throw "unsupported type";
+                }
             }
+        } else {
+            a->pushNone();
         }
-    } else {
-        a->pushNone();
+    } catch(diamondapparatus::DiamondException d){
+        THROWDIAMOND(d);
     }
+    
 }
 
 %wordargs getwaitany s (name -- list) get a topic (waiting for any data)
@@ -79,7 +93,7 @@ Get data on a topic, waiting for new data to arrive.
 
 %wordargs getnowait s (name -- list/none) get a topic (no wait)
 Get data on a topic, even if there is no data yet (will return
-none in this case).
+                                                   none in this case).
 {
     doGet(a,p0,0);
 }
@@ -87,19 +101,31 @@ none in this case).
 %word waitany (--)
 Wait for new data to be received on any topic to which I am subscribed.
 {
-    diamondapparatus::waitForAny();
+    try {
+        diamondapparatus::waitForAny();
+    } catch(diamondapparatus::DiamondException d){
+        THROWDIAMOND(d);
+    }
 }
 
 
 
 %init
 {
-    fprintf(stderr,"Initialising DIAMOND plugin, %s %s\n",__DATE__,__TIME__);
-    diamondapparatus::init();
+    try {
+        fprintf(stderr,"Initialising DIAMOND plugin, %s %s\n",__DATE__,__TIME__);
+        diamondapparatus::init();
+    } catch(diamondapparatus::DiamondException d){
+        THROWDIAMOND(d);
+    }
 }
 
 
 %shutdown
 {
-    diamondapparatus::destroy();
+    try {
+        diamondapparatus::destroy();
+    } catch(diamondapparatus::DiamondException d){
+        THROWDIAMOND(d);
+    }
 }

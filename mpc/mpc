@@ -237,6 +237,7 @@ global list # force a new definition in this namespace
     then
     ?stat?`repeat "Repeat" showbool "    " std$p
     ?stat?`random "Random" showbool nl
+    ?stat?`update if "UPDATING". then
     
 ;
 

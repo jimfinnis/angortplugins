@@ -357,7 +357,7 @@ float type currently supported without a library).
 {
     Value *p[2];
     a->popParams(p,"nA",&tFile);
-    double b = p[0]->toFloat();
+    double b = p[0]->toDouble();
     fwrite(&b,sizeof(b),1,getf(p[1],true));
 }    
 
@@ -370,7 +370,7 @@ float type currently supported without a library).
     a->popParams(&p,"A",&tFile);
     
     if(fread(&i,sizeof(i),1,getf(p,false))>0)
-        a->pushFloat(i);
+        a->pushDouble(i);
     else
         a->pushNone();
 }
