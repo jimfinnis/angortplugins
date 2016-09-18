@@ -411,6 +411,21 @@ void sendAddOfNameInHash(Value *v){
         conn.throwError();
 }
 
+%word update ( -- ) start updating all modified files
+{
+    conn.check();
+    if(!mpd_run_update(conn.mpd,NULL))
+        conn.throwError();
+}
+
+%word rescan ( -- ) start rescanning the entire music directory
+{
+    conn.check();
+    if(!mpd_run_rescan(conn.mpd,NULL))
+        conn.throwError();
+}
+
+
 %word rm (name --) delete a playlist
 {
     Value *p;
