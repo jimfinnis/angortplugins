@@ -179,10 +179,21 @@ public:
     }
     
     virtual ~CSV(){
-        if(colNames)
-            delete colNames;
         if(types)
             free((void *)types);
+        reset();
+    }
+    
+    void reset(){
+        // do this every time we start a new file, so we can
+        // get a new set of column names (and not read the first
+        // line of the subsequent files as a line of data)
+        if(colNames){
+            for(int i=0;i<numCols;i++)
+                if(colNames[i])free((void *)colNames[i]);
+            delete [] colNames;
+        }
+        colNames=NULL;
     }
     
     // process a line of input and set the value accordingly. Will throw
@@ -317,6 +328,7 @@ static WrapperType<CSV> tCSV("CSVT");
     if(!f){
         a->pushNone();
     } else {
+        p0->reset();
         Value listv,linev;
         ArrayList<Value> *list=Types::tList->set(&listv);
         char buf[8192];
@@ -334,6 +346,14 @@ static WrapperType<CSV> tCSV("CSVT");
         a->pushval()->copy(&listv);
     }
 }
+
+%wordargs reset A|csv (csv -- ) reset the CSV reader
+Resets the CSV reader given, so that it will parse headers as the next
+line.
+{
+    p0->reset();
+}
+
 
 %wordargs cols A|csv (csv -- list|none) get list of cols if present, or none.
 {

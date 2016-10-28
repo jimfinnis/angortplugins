@@ -142,6 +142,21 @@ static Vector2DType tV2;
     Types::tFloat->set(a->pushval(),v->y);
 }
 
+%word x (v -- x) get x onto stack
+{
+    Value *p;
+    a->popParams(&p,"A",&tV2);
+    Vector2D *v = tV2.get(p);
+    Types::tFloat->set(a->pushval(),v->x);
+}
+%word y (v -- y) get y onto stack
+{
+    Value *p;
+    a->popParams(&p,"A",&tV2);
+    Vector2D *v = tV2.get(p);
+    Types::tFloat->set(a->pushval(),v->y);
+}
+
 %wordargs angle A|vec (v -- n) get angle from Y axis
 {
     a->pushFloat(p0->angle());

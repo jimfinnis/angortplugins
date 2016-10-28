@@ -238,8 +238,44 @@ global list # force a new definition in this namespace
     ?stat?`repeat "Repeat" showbool "    " std$p
     ?stat?`random "Random" showbool nl
     ?stat?`update if "UPDATING". then
-    
 ;
+
+:statstr |s,sym,c:|
+    ?sym ?s get if ?c else "." then;
+
+:longprompt |g,s,c:t,list,song|
+    try
+        mpc$stat !stat
+        #stat chars
+        ?stat `repeat "r" statstr
+        ?stat `random "R" statstr +
+        ?stat `update "u" statstr +
+        ?stat?`state <<[%
+           `play ">",
+           `stop "s",
+           `pause "p"
+           ]>> get !t
+        ?t isnone if "?" else ?t then + 
+        " " +
+        # list position
+        mpc$list !list
+        ?stat?`pos + "/" + ?list len + " " +
+        ?stat?`state `play = ?stat?`state `pause = or if
+            ?stat?`pos ?list get !song
+            ?song?`title chknone 20 trunc + "/" +
+            ?song?`album chknone 20 trunc + "/" +
+            ?song?`artist chknone 20 trunc + 
+        then
+        "|   "+
+
+    catch: ex$failed,ex$notready
+        "ERR"
+    endtry
+    
+    " " + ?g + "|" + ?s + " " + ?c + " " +
+;
+
+?longprompt cli$prompt
 
 :v mpc$setvol;
 

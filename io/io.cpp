@@ -28,15 +28,19 @@ using namespace angort;
 class FileIterator : public Iterator<Value *> {
 private:
     Value v;
+    int idx;
 public:
     class File *file;
-    FileIterator(class File *f);
+    FileIterator(const class File *f);
     virtual ~FileIterator();
     virtual void first();
     virtual void next();
     virtual bool isDone() const;
     virtual Value *current(){
         return &v;
+    }
+    virtual int index() const{
+        return idx;
     }
 };
 
@@ -57,7 +61,7 @@ public:
         }
     }
     
-    virtual Iterator<class Value *> *makeValueIterator();    
+    virtual Iterator<class Value *> *makeValueIterator() const;    
     
     // this stops the GC trying to iterate over the file itself!
     virtual Iterator<class Value *> *makeGCValueIterator(){
@@ -130,9 +134,10 @@ static const char *readstr(FILE *f,bool endAtEOL=false){
  * Iterator
  */
 
-FileIterator::FileIterator(File *f){
-    file = f;
-    f->incRefCt();
+FileIterator::FileIterator(const File *f){
+    idx=-1; // because the first read immediately next()
+    file = const_cast<File *>(f);
+    file->incRefCt();
 }
 
 FileIterator::~FileIterator(){
@@ -152,6 +157,7 @@ void FileIterator::next() {
     const char *s = readstr(file->f,true);
     Types::tString->set(&v,s);
     free((char *)s);
+    idx++;
 }
 
 bool FileIterator::isDone() const {
@@ -161,7 +167,7 @@ bool FileIterator::isDone() const {
 
 
 
-Iterator<class Value *> *File::makeValueIterator(){
+Iterator<class Value *> *File::makeValueIterator() const{
     return new FileIterator(this);
 }
 
