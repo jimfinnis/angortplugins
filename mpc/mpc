@@ -243,7 +243,7 @@ global list # force a new definition in this namespace
 :statstr |s,sym,c:|
     ?sym ?s get if ?c else "." then;
 
-:longprompt |g,s,c:t,list,song|
+:longprompt |g,s,c:t,list,song,stat|
     try
         mpc$stat !stat
         #stat chars
@@ -269,7 +269,7 @@ global list # force a new definition in this namespace
         "|   "+
 
     catch: ex$failed,ex$notready
-        "ERR"
+        clear "ERR"
     endtry
     
     " " + ?g + "|" + ?s + " " + ?c + " " +
@@ -530,6 +530,15 @@ global list # force a new definition in this namespace
 # running this.
 :terence
     clr "http://192.168.2.10:8000/terence"
+    addmp3 p
+;
+
+# live streaming from darkice->icecast2 on imble.
+# See StreamingAudioToPi on terence, but the basics are
+# to run darkice -c darkice.cfg in that directory before
+# running this.
+:imble
+    clr "http://208.113.132.162:8000/wibblings"
     addmp3 p
 ;
 
