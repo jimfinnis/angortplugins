@@ -9,6 +9,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <limits.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <angort/angort.h>
 
 using namespace angort;
@@ -54,6 +56,58 @@ using namespace angort;
     args[p0->count()] = NULL;
     execv(p1,args);
 }
+
+%wordargs execpipe ls (arglist path -- output)
+{
+    static const int BUFFERSIZE=1024;
+    int link[2];
+    pid_t pid;
+    char foo[BUFFERSIZE];
+    if(pipe(link)==-1)
+        throw RUNT(EX_FAILED,"cannot create pipe");
+    if((pid = fork())==-1)
+        throw RUNT(EX_FAILED,"cannot fork");
+    if(!pid){
+        dup2(link[1],STDOUT_FILENO);
+        close(link[0]);
+        close(link[1]);
+        char **args = new char * [p0->count()+1];
+        for(int i=0;i<p0->count();i++){
+            args[i] = strdup(p0->get(i)->toString().get());
+        }
+        args[p0->count()] = NULL;
+        execv(p1,args);
+        exit(0);
+    } else {
+        char *p = NULL;
+        int len=0;
+        close(link[1]);
+        while(1){
+            int nbytes = read(link[0],foo,sizeof(foo));
+            if(nbytes){
+                int end=len;
+                len+=nbytes;
+                if(!p){
+                    p=(char *)malloc(len+1);
+                } else {
+                    p=(char *)realloc(p,len+1);
+                }
+                memcpy(p+end,foo,nbytes);
+            } else {
+                break;
+            }
+        }
+        wait(NULL);
+        if(!p)
+            a->pushString("");
+        else {
+            p[len]=0;
+            a->pushString(p);
+            free(p);
+        }
+    }
+}
+        
 
 static int exitcode=0;
 %wordargs system s (string --)

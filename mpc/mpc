@@ -3,6 +3,7 @@
 package mpcc
 
 [`curl,`time,`regex, `sys,`mpc,`id3,`io] each { i library drop}
+require "ansiterm.ang" drop
 
 "HOME" getenv !Home
 
@@ -57,6 +58,7 @@ private
 :showlist |startidx,endidx:list,titlen,artlen,stat,i|
     mpc$list !list
     mpc$stat !stat
+    `blue ansiterm$setfc std$p
     "List length: " std$p ?list len.
     
     # get the bit of the list we want
@@ -82,17 +84,22 @@ private
     ?startidx !i
     ?list each {
         ?i ?stat?`pos = if
-            ">> " std$p
+            `red ansiterm$setfbc ">> " + std$p
         else
             "   " std$p
         then
         
-        [?i, 
+        [
+         <<`yellow ansiterm$setfbc>>,
+         ?i, 
+         <<`blue ansiterm$setfbc>>,
          i?`artist chknone ?artlen trunc ?artlen padleft,
+         <<`green ansiterm$setfbc>>,
          i?`title  chknone ?titlen trunc ?titlen padleft] 
-        "%4d %s %s" format .
+        "%s%4d %s%s %s%s" format .
         ?i 1+ !i
     }
+    ansiterm$rset p
 ;
 
 # get the track number from the MPD track number string e.g. "11/14" gives 11. 
@@ -247,7 +254,8 @@ global list # force a new definition in this namespace
     try
         mpc$stat !stat
         #stat chars
-        ?stat `repeat "r" statstr
+        `blue ansiterm$setfbc
+        ?stat `repeat "r" statstr +
         ?stat `random "R" statstr +
         ?stat `update "u" statstr +
         ?stat?`state <<[%
@@ -258,6 +266,7 @@ global list # force a new definition in this namespace
         ?t isnone if "?" else ?t then + 
         " " +
         # list position
+        `green ansiterm$setfbc +
         mpc$list !list
         ?stat?`pos + "/" + ?list len + " " +
         ?stat?`state `play = ?stat?`state `pause = or if
@@ -271,8 +280,9 @@ global list # force a new definition in this namespace
     catch: ex$failed,ex$notready
         clear "ERR"
     endtry
-    
+    `yellow ansiterm$setfbc +
     " " + ?g + "|" + ?s + " " + ?c + " " +
+    ansiterm$rset +
 ;
 
 ?longprompt cli$prompt
