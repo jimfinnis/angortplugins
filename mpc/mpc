@@ -84,17 +84,17 @@ private
     ?startidx !i
     ?list each {
         ?i ?stat?`pos = if
-            `red ansiterm$setfbc ">> " + std$p
+            `red ansiterm$setfc ">> " + std$p
         else
             "   " std$p
         then
         
         [
-         <<`yellow ansiterm$setfbc>>,
+         <<`yellow ansiterm$setfc>>,
          ?i, 
-         <<`blue ansiterm$setfbc>>,
+         <<`blue ansiterm$setfc>>,
          i?`artist chknone ?artlen trunc ?artlen padleft,
-         <<`green ansiterm$setfbc>>,
+         <<`green ansiterm$setfc>>,
          i?`title  chknone ?titlen trunc ?titlen padleft] 
         "%s%4d %s%s %s%s" format .
         ?i 1+ !i
@@ -249,12 +249,18 @@ global list # force a new definition in this namespace
 
 :statstr |s,sym,c:|
     ?sym ?s get if ?c else "." then;
+    
+# used to wrap command sequences which do not output text, for readline()
+# and prompts
+:wrapseq |s:| "\001" ?s + "\002" +;
+
 
 :longprompt |g,s,c:t,list,song,stat|
     try
         mpc$stat !stat
         #stat chars
-        `blue ansiterm$setfbc
+        ""
+        `blue ansiterm$setfbc wrapseq +
         ?stat `repeat "r" statstr +
         ?stat `random "R" statstr +
         ?stat `update "u" statstr +
@@ -266,7 +272,7 @@ global list # force a new definition in this namespace
         ?t isnone if "?" else ?t then + 
         " " +
         # list position
-        `green ansiterm$setfbc +
+        `green ansiterm$setfbc wrapseq +
         mpc$list !list
         ?stat?`pos + "/" + ?list len + " " +
         ?stat?`state `play = ?stat?`state `pause = or if
@@ -280,12 +286,13 @@ global list # force a new definition in this namespace
     catch: ex$failed,ex$notready
         clear "ERR"
     endtry
-    `yellow ansiterm$setfbc +
+    `yellow ansiterm$setfbc wrapseq +
     " " + ?g + "|" + ?s + " " + ?c + " " +
-    ansiterm$rset +
+    ansiterm$rset wrapseq +
 ;
 
 ?longprompt cli$prompt
+
 
 :v mpc$setvol;
 

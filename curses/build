@@ -1,0 +1,12 @@
+#!/bin/bash
+source ../base.sh
+
+makewords curses
+
+g++ -fPIC -g -c -Wall curses.plugin.cpp 
+
+g++ -shared -Wl,-soname,curses.angso \
+    -o ../libs/curses.angso \
+    curses.plugin.o\
+    -lncurses
+

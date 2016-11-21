@@ -57,33 +57,44 @@ using namespace angort;
     execv(p1,args);
 }
 
-%wordargs execpipe ls (arglist path -- output)
+%wordargs execpipe sls (input arglist path -- output)
+Pipe a string (possibly consisting of multiple lines) through a 
+program. Does this with two pipes - one into and one out of the process,
+connected to the stdin and stdout of that process.
 {
     static const int BUFFERSIZE=1024;
-    int link[2];
+    int linkfromcmd[2];
+    int linktocmd[2];
     pid_t pid;
     char foo[BUFFERSIZE];
-    if(pipe(link)==-1)
+    if(pipe(linkfromcmd)==-1)
+        throw RUNT(EX_FAILED,"cannot create pipe");
+    if(pipe(linktocmd)==-1)
         throw RUNT(EX_FAILED,"cannot create pipe");
     if((pid = fork())==-1)
         throw RUNT(EX_FAILED,"cannot fork");
     if(!pid){
-        dup2(link[1],STDOUT_FILENO);
-        close(link[0]);
-        close(link[1]);
-        char **args = new char * [p0->count()+1];
-        for(int i=0;i<p0->count();i++){
-            args[i] = strdup(p0->get(i)->toString().get());
+        dup2(linkfromcmd[1],STDOUT_FILENO);
+        dup2(linktocmd[0],STDIN_FILENO);
+        close(linkfromcmd[0]);
+        close(linktocmd[1]);
+        char **args = new char * [p1->count()+2];
+        args[0]=(char *)p2;
+        for(int i=0;i<p1->count();i++){
+            args[i+1] = strdup(p1->get(i)->toString().get());
         }
-        args[p0->count()] = NULL;
-        execv(p1,args);
+        args[p1->count()+1] = NULL;
+        execv(p2,args);
         exit(0);
     } else {
         char *p = NULL;
         int len=0;
-        close(link[1]);
+        close(linkfromcmd[1]);
+        close(linktocmd[0]);
+        write(linktocmd[1],p0,strlen(p0));
+        close(linktocmd[1]);
         while(1){
-            int nbytes = read(link[0],foo,sizeof(foo));
+            int nbytes = read(linkfromcmd[0],foo,sizeof(foo));
             if(nbytes){
                 int end=len;
                 len+=nbytes;

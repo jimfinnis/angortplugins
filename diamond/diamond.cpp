@@ -36,7 +36,8 @@ new data.
         Topic t;
         for(iter.first();!iter.isDone();iter.next()){
             Value *v = iter.current();
-            if(v->t == Types::tFloat || v->t == Types::tInteger){
+            if(v->t == Types::tFloat || v->t == Types::tInteger ||
+               v->t == Types::tDouble || v->t == Types::tLong){
                 t.add(Datum(v->toFloat()));
             } else {
                 t.add(Datum(v->toString().get()));
