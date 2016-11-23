@@ -1,0 +1,285 @@
+#!/usr/local/bin/angort
+[`curses,`time,`regex, `sys, `io] each { i library drop}
+
+require "cursesutils/window.ang" drop
+
+
+args pop !SearchTerm
+"" [?SearchTerm] "/usr/bin/locate" sys$execpipe "\n"
+split dup pop drop !MasterList
+
+# list of filter functions, of the form [descstring,(string -- bool)]
+
+[] !Filters
+
+258 const Down
+259 const Up
+260 const Left
+261 const Right
+
+--EOT
+01234567890123456789
+up,down: select
+left,rt: move
+m      : merge filts
++      : add +ve flt
+-      : add -ve flt
+--EOT
+"\n" split dup shift drop !HelpText
+
+:runfilters
+    ?Filters each {
+        i snd filter
+    }
+;
+
+:mkaddfilter |term:rx|
+    ?term regex$compile !rx
+    (?rx regex$match len);
+
+:mksubfilter |term:rx|
+    ?term regex$compile !rx
+    (?rx regex$match len not);
+
+:add |term:|
+    :"add a new regexp as a positive filter (i.e. pass those entries which match)"
+
+    ["+" ?term +, ?term mkaddfilter] ?Filters push
+;
+:sub |term:|
+    :"add a new regexp as a subtractive filter (i.e. remove those entries which do not match"
+    ["-" ?term +, ?term mksubfilter] ?Filters push
+;
+:rm :"remove the last added filter"
+    ?Filters len if ?Filters pop drop then;
+    
+:rmn |n:|
+    :"remove a filter by number in the lf list"
+    ?n ?Filters remove drop
+;
+
+:repchar |char,ct:| "" 0 ?ct range each {?char+};
+   
+
+:initialise
+    curses$init 
+    0 curses$echo
+    1 curses$cbreak
+    1 curses$newline
+    0 curses$setcursor
+    curses$size !WIDTH !HEIGHT
+    
+    [
+     [`white,`black] 0 !PAIR_NORMAL,
+     [`white,`green] 1 !PAIR_GREENBACK,
+     [`white,`blue] 2 !PAIR_BLUEBACK,
+     [`yellow,`black] 3 !PAIR_HIGHLIGHT
+     ] curses$setcols
+    [?PAIR_NORMAL] curses$attrs !ATTR_NORMAL
+    [?PAIR_HIGHLIGHT, `bold] curses$attrs !ATTR_HIGHLIGHT
+;
+
+:writestatus |s:|
+    curses$getattrs
+    curses$getpos
+    0 curses$setattrs
+    0 HEIGHT 1- curses$move
+    ?s curses$write curses$clrtoeol
+    curses$move
+    curses$setattrs
+;
+    
+
+:regenlist  ?MasterList runfilters !List;
+
+:mkmainwindow |:this,start,cur|
+     0!start 0!cur
+    "main" 0 0 WIDTH 20 - HEIGHT 2- [PAIR_BLUEBACK] BORDER_RIGHT window
+    [%
+     `draw (|:t|
+         ?this?`drawborders@
+         0 ?this?`h range each {
+             ?this?`x ?this?`y i + curses$move
+             ?start i + !t
+             ?t ?List len < if
+                 ?t ?cur = if ATTR_HIGHLIGHT else ATTR_NORMAL then
+                 curses$setattrs
+                 ?t ?List get
+             else
+                 ""
+             then
+             ?this?`w trunc
+             ?this?`w padright
+             curses$write
+         }
+         ?this?`drawcoords@
+     ),
+     `moveforw (|n:|
+         ?n isnone if ?this?`h 2/ !n then
+         ?start ?n + !n
+         ?n ?List len ?this?`h - <= if
+             ?n !start
+         else
+             ?List len ?this?`h - !start
+             ?start 0 < if 0 else ?start then !start
+         then
+         ?cur ?start < if 
+             ?start !cur
+         then
+     ),
+     `moveback (|n:|
+         ?n isnone if ?this?`h 2/ !n then
+         ?start ?n - !n
+         ?n 0 < if 0 else ?n then !start
+         ?cur ?start - ?this?`h >= if
+             ?start ?this?`h + 1- !cur
+         then
+         ?this?`recentre@
+     ),
+     `selforw (|n:|
+         ?n isnone if ?this?`h 2/ !n then
+         ?cur ?n + !n
+         ?n ?List len < if
+             ?n !cur
+             ?cur ?start ?this?`h + >= if
+                none ?this?`moveforw@
+             then
+         then
+     ),
+     `selback (|n:|
+         ?n isnone if ?this?`h 2/ !n then
+         ?cur ?n - !n
+         ?n 0 >= if
+             ?n !cur
+             ?cur ?start < if 
+                 none ?this?`moveback@
+             then
+         then
+     ),
+     `drawcoords (
+         [?start,?cur,?List len] "start=%d cur=%d/%d" format writestatus
+     )
+         
+     ] + dup!this
+;
+
+20 !SideBarWidth
+20 !HelpHeight
+# filter list singleton
+:mkfilterwindow |:this|
+    "filters" 
+    WIDTH SideBarWidth - 0
+    SideBarWidth HEIGHT HelpHeight - 2- 
+    [PAIR_BLUEBACK] BORDER_TOP window
+    [%
+     `draw (
+         ?this?`drawborders@
+         # vertical bar down LHS and list
+         0 ?this?`h range each {
+             ?this?`x ?this?`y i + curses$move
+             i ?Filters len < if
+                 i ?Filters get fst
+             else
+                 ""
+             then
+             ?HelpHeight padright curses$write             
+         }
+     )
+     ] + dup!this
+;
+
+# help list
+:mkhelpwindow |:this|
+    "help" 
+    WIDTH SideBarWidth - ?FilterListWindow?`h
+    SideBarWidth HelpHeight
+    [PAIR_BLUEBACK] BORDER_TOP window
+    [%
+     `draw (
+         ?this?`drawborders@
+         0 ?this?`h range each {
+             i ?HelpText len < if
+                 ?this?`x ?this?`y i+ curses$move
+                 i ?HelpText get curses$write
+             then
+         }
+     )
+     ] + dup!this
+;     
+
+:readline |prompt:s|
+    curses$getcursor
+    curses$getpos
+    0 HEIGHT 1- curses$move
+    ?prompt curses$write curses$clrtoeol
+    1 curses$setcursor
+    1 curses$echo
+    curses$getstr !s
+    0 curses$echo
+    0 HEIGHT 1- curses$move
+    "" WIDTH padleft curses$write
+    curses$move
+    curses$setcursor
+    ?s
+;
+    
+
+:mainloop |:key,done|
+    initialise
+    mkmainwindow !MainListWindow
+    mkfilterwindow !FilterListWindow
+    mkhelpwindow !HelpWindow
+    0!done
+    regenlist
+    {
+        ?done ifleave
+        ?MainListWindow?`draw@
+        ?FilterListWindow?`draw@
+        ?HelpWindow?`draw@
+        # bottom line
+        curses$getattrs
+        [ PAIR_GREENBACK ] curses$attrs curses$setattrs
+        0 HEIGHT 2- curses$move "" WIDTH padleft curses$write
+        curses$setattrs
+        # redraw and get char
+        curses$refresh
+        curses$getch 
+        [%
+         <<"q" asc>> (
+             1!done
+         ),
+         <<"m" asc>> (
+             ?List !MasterList
+             [] !Filters
+             regenlist
+         ),
+         Right (
+             none ?MainListWindow?`moveforw@
+         ),
+         Left (
+             none ?MainListWindow?`moveback@
+         ),
+         Up ( 
+             1 ?MainListWindow?`selback@
+         ),
+         Down ( 
+             1 ?MainListWindow?`selforw@
+         ),
+             
+         <<"+" asc>> (
+             "Positive filter: " readline add
+             regenlist
+         ),
+         <<"-" asc>> (
+             "Negative filter: " readline sub
+             regenlist
+         )
+         
+         ] get@
+    }
+    "END".
+    curses$end
+;
+    
+mainloop
+
