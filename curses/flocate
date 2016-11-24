@@ -1,12 +1,25 @@
 #!/usr/local/bin/angort
 [`curses,`time,`regex, `sys, `io] each { i library drop}
 
+require "util.ang" drop
 require "cursesutils/window.ang" drop
 
+# generate the main list - a file list consists of a list of tuples,
+# tuples are [filename,stathash]. Input is a list of filenames.
+:genlist |input:|
+    "Generating master list..".
+    [] ?input each {
+        [i,none], # no stat data initially
+    }
+    nl
+;
+    
+"xterm -e $EDITOR %s" !SysViewCmd
 
 args pop !SearchTerm
+"Running locate...".
 "" [?SearchTerm] "/usr/bin/locate" sys$execpipe "\n"
-split dup pop drop !MasterList
+split dup pop drop genlist !MasterList
 
 # list of filter functions, of the form [descstring,(string -- bool)]
 
@@ -24,40 +37,45 @@ left,rt: move
 m      : merge filts
 +      : add +ve flt
 -      : add -ve flt
+/      : search
+r      : remove filt
+s      : save list
+h      : content flt
+v      : view
 --EOT
 "\n" split dup shift drop !HelpText
 
-:runfilters
-    ?Filters each {
-        i snd filter
-    }
-;
-
 :mkaddfilter |term:rx|
     ?term regex$compile !rx
-    (?rx regex$match len);
+    (fst ?rx regex$match len);
 
 :mksubfilter |term:rx|
     ?term regex$compile !rx
-    (?rx regex$match len not);
+    (fst ?rx regex$match len not);
 
-:add |term:|
-    :"add a new regexp as a positive filter (i.e. pass those entries which match)"
-
-    ["+" ?term +, ?term mkaddfilter] ?Filters push
-;
-:sub |term:|
-    :"add a new regexp as a subtractive filter (i.e. remove those entries which do not match"
-    ["-" ?term +, ?term mksubfilter] ?Filters push
-;
-:rm :"remove the last added filter"
-    ?Filters len if ?Filters pop drop then;
+:mkcontentfilter |term:|
+    (|a:| 
+        "" ["-l",?term,?a fst] 
+        "/bin/grep" 
+        sys$execpipe len
+);
     
-:rmn |n:|
-    :"remove a filter by number in the lf list"
-    ?n ?Filters remove drop
+        
+
+:rm :"remove the last added filter"
+    ?Filters len if ?Filters pop drop then
 ;
 
+    
+:rmfilter |s:|
+    ?s len if
+        ?s toint !s
+        ?s 0 >= ?s ?Filters len < and if
+            ?s ?Filters remove drop
+        then
+    then
+;
+    
 :repchar |char,ct:| "" 0 ?ct range each {?char+};
    
 
@@ -87,16 +105,36 @@ m      : merge filts
     ?s curses$write curses$clrtoeol
     curses$move
     curses$setattrs
+    curses$refresh
 ;
     
 
-:regenlist  ?MasterList runfilters !List;
+:runfilters |:oldcur|
+    "Filtering.." writestatus
+    ?List isnone not if
+        ?MainListWindow?`getcur@ fst
+    else
+        none
+    then !oldcur
+    
+    ?MasterList ?Filters each {
+        i snd filter
+    } !List
+    
+    ?oldcur isnone not if
+        ?oldcur ?MainListWindow?`setcurtostring@
+    then
+    ?MainListWindow?`recentre@
+;
+
 
 :mkmainwindow |:this,start,cur|
      0!start 0!cur
     "main" 0 0 WIDTH 20 - HEIGHT 2- [PAIR_BLUEBACK] BORDER_RIGHT window
     [%
      `draw (|:t|
+         # might have changed due to filter
+         curses$getattrs
          ?this?`drawborders@
          0 ?this?`h range each {
              ?this?`x ?this?`y i + curses$move
@@ -104,7 +142,7 @@ m      : merge filts
              ?t ?List len < if
                  ?t ?cur = if ATTR_HIGHLIGHT else ATTR_NORMAL then
                  curses$setattrs
-                 ?t ?List get
+                 ?t ?List get fst
              else
                  ""
              then
@@ -113,6 +151,55 @@ m      : merge filts
              curses$write
          }
          ?this?`drawcoords@
+         curses$setattrs
+     ),
+     `recentre (
+         ?List len if
+             ?cur ?List len > if
+                 ?List len 1 - !cur
+             then
+             ?cur ?this?`h 2/ - !start
+             ?start 0 < if 0 !start then
+         else
+             0!cur
+         then
+     ),
+     `setcurtostring (|s:|
+         0 ?List len range each {
+             i ?List get fst ?s = if i !cur leave then
+         }
+         ?this?`recentre@
+     ),
+     `getcur (
+         ?List len if
+             ?cur ?List get
+         else
+             "" # not none, it causes errors. This is safer?
+         then
+     ),
+     `search (|s:r,oldcur|
+         ?cur!oldcur
+         none!cur
+         ?s regex$compile !r
+         # first forwards
+         ?cur ?List len range each {
+             i ?List get fst ?r regex$match len if
+                 i!cur leave
+             then
+         }
+         ?cur isnone if
+             0 ?cur range each {
+                 i ?List get fst ?r regex$match len if
+                     i!cur leave
+                 then
+             }
+         then
+         ?cur isnone if
+             "not found" writestatus
+             ?oldcur!cur
+         else
+             ?this?`recentre@
+         then
      ),
      `moveforw (|n:|
          ?n isnone if ?this?`h 2/ !n then
@@ -134,7 +221,10 @@ m      : merge filts
          ?cur ?start - ?this?`h >= if
              ?start ?this?`h + 1- !cur
          then
-         ?this?`recentre@
+         ?start ?this?`h + ?cur >= if
+             ?start ?this?`h 1- + !cur
+         then
+             
      ),
      `selforw (|n:|
          ?n isnone if ?this?`h 2/ !n then
@@ -142,7 +232,7 @@ m      : merge filts
          ?n ?List len < if
              ?n !cur
              ?cur ?start ?this?`h + >= if
-                none ?this?`moveforw@
+                 none ?this?`moveforw@
              then
          then
      ),
@@ -151,7 +241,7 @@ m      : merge filts
          ?cur ?n - !n
          ?n 0 >= if
              ?n !cur
-             ?cur ?start < if 
+             ?cur ?start < if
                  none ?this?`moveback@
              then
          then
@@ -178,7 +268,7 @@ m      : merge filts
          0 ?this?`h range each {
              ?this?`x ?this?`y i + curses$move
              i ?Filters len < if
-                 i ?Filters get fst
+                 [i,i ?Filters get fst] "%2d) %s" format
              else
                  ""
              then
@@ -230,7 +320,7 @@ m      : merge filts
     mkfilterwindow !FilterListWindow
     mkhelpwindow !HelpWindow
     0!done
-    regenlist
+    runfilters
     {
         ?done ifleave
         ?MainListWindow?`draw@
@@ -245,13 +335,22 @@ m      : merge filts
         curses$refresh
         curses$getch 
         [%
+         10 (
+             curses$end
+             ?MainListWindow?`getcur@ fst.
+             quit
+         ),
          <<"q" asc>> (
              1!done
+         ),
+         <<"v" asc>> (
+             [?MainListWindow?`getcur@ fst]
+             ?SysViewCmd format sys$system
          ),
          <<"m" asc>> (
              ?List !MasterList
              [] !Filters
-             regenlist
+             runfilters
          ),
          Right (
              none ?MainListWindow?`moveforw@
@@ -265,16 +364,48 @@ m      : merge filts
          Down ( 
              1 ?MainListWindow?`selforw@
          ),
-             
-         <<"+" asc>> (
-             "Positive filter: " readline add
-             regenlist
+         <<"/" asc>> (
+             "Wrapping search: " readline ?MainListWindow?`search@
          ),
-         <<"-" asc>> (
-             "Negative filter: " readline sub
-             regenlist
+         <<"+" asc>> (|:t|
+             "Positive filter: " readline !t
+             ?t len if
+                 ["+" ?t +, ?t mkaddfilter] ?Filters push
+             then
+             runfilters
+         ),
+         <<"-" asc>> (|:t|
+             "Negative filter: " readline !t
+             ?t len if
+                 ["+" ?t +, ?t mksubfilter] ?Filters push
+             then
+             runfilters
+         ),
+         <<"c" asc>> (|:t|
+             "Content filter: " readline !t
+             ?t len if
+                 ["con:" ?t +, ?t mkcontentfilter] ?Filters push
+             then
+             runfilters
+         ),
+         <<"r" asc>> (
+             "Remove filter: " readline 
+             rmfilter
+             runfilters
+         ),
+         <<"s" asc>> (|:fn,f|
+             "Filename: " readline !fn
+             ?fn len if
+                 try 
+                     ?fn redir
+                     ?List each {i fst.}
+                     endredir
+                 catch :ex$failed
+                     "cannot open file (press a key)" writestatus
+                     curses$getch drop
+                 endtry
+             then
          )
-         
          ] get@
     }
     "END".

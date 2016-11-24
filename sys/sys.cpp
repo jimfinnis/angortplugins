@@ -117,6 +117,11 @@ connected to the stdin and stdout of that process.
             free(p);
         }
     }
+    close(linkfromcmd[0]);
+    close(linktocmd[0]);
+    close(linkfromcmd[1]);
+    close(linktocmd[1]);
+                    
 }
         
 
