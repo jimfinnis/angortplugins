@@ -346,6 +346,7 @@ v      : view
          <<"v" asc>> (
              [?MainListWindow?`getcur@ fst]
              ?SysViewCmd format sys$system
+             curses$refresh # just in case something's written something
          ),
          <<"m" asc>> (
              ?List !MasterList
