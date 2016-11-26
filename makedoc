@@ -1,0 +1,7 @@
+#!/bin/sh
+
+angort maketex.ang >body.tex
+
+pdflatex doc.tex
+pdflatex doc.tex
+

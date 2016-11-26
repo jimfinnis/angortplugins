@@ -10,7 +10,7 @@
 
 template <class T> struct Wrapper : GarbageCollected {
     T *base;
-    Wrapper(T *p){
+    Wrapper(T *p) : GarbageCollected() {
         base = p;
     }
     virtual ~Wrapper(){

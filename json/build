@@ -1,0 +1,11 @@
+#!/bin/bash
+source ../base.sh
+
+makewords json
+
+g++ -fPIC -g -c -Iinclude -Wall json.plugin.cpp 
+
+g++ -shared -Wl,-soname,json.angso \
+    -o ../libs/json.angso \
+    json.plugin.o
+

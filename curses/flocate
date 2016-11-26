@@ -1,0 +1,417 @@
+#!/usr/local/bin/angort
+[`curses,`time,`regex, `sys, `io] each { i library drop}
+
+require "util.ang" drop
+require "cursesutils/window.ang" drop
+
+# generate the main list - a file list consists of a list of tuples,
+# tuples are [filename,stathash]. Input is a list of filenames.
+:genlist |input:|
+    "Generating master list..".
+    [] ?input each {
+        [i,none], # no stat data initially
+    }
+    nl
+;
+    
+"xterm -e $EDITOR %s" !SysViewCmd
+
+args pop !SearchTerm
+"Running locate...".
+"" [?SearchTerm] "/usr/bin/locate" sys$execpipe "\n"
+split dup pop drop genlist !MasterList
+
+# list of filter functions, of the form [descstring,(string -- bool)]
+
+[] !Filters
+
+258 const Down
+259 const Up
+260 const Left
+261 const Right
+
+--EOT
+01234567890123456789
+up,down: select
+left,rt: move
+m      : merge filts
++      : add +ve flt
+-      : add -ve flt
+/      : search
+r      : remove filt
+s      : save list
+h      : content flt
+v      : view
+--EOT
+"\n" split dup shift drop !HelpText
+
+:mkaddfilter |term:rx|
+    ?term regex$compile !rx
+    (fst ?rx regex$match len);
+
+:mksubfilter |term:rx|
+    ?term regex$compile !rx
+    (fst ?rx regex$match len not);
+
+:mkcontentfilter |term:|
+    (|a:| 
+        "" ["-l",?term,?a fst] 
+        "/bin/grep" 
+        sys$execpipe len
+);
+    
+        
+
+:rm :"remove the last added filter"
+    ?Filters len if ?Filters pop drop then
+;
+
+    
+:rmfilter |s:|
+    ?s len if
+        ?s toint !s
+        ?s 0 >= ?s ?Filters len < and if
+            ?s ?Filters remove drop
+        then
+    then
+;
+    
+:repchar |char,ct:| "" 0 ?ct range each {?char+};
+   
+
+:initialise
+    curses$init 
+    0 curses$echo
+    1 curses$cbreak
+    1 curses$newline
+    0 curses$setcursor
+    curses$size !WIDTH !HEIGHT
+    
+    [
+     [`white,`black] 0 !PAIR_NORMAL,
+     [`white,`green] 1 !PAIR_GREENBACK,
+     [`white,`blue] 2 !PAIR_BLUEBACK,
+     [`yellow,`black] 3 !PAIR_HIGHLIGHT
+     ] curses$setcols
+    [?PAIR_NORMAL] curses$attrs !ATTR_NORMAL
+    [?PAIR_HIGHLIGHT, `bold] curses$attrs !ATTR_HIGHLIGHT
+;
+
+:writestatus |s:|
+    curses$getattrs
+    curses$getpos
+    0 curses$setattrs
+    0 HEIGHT 1- curses$move
+    ?s curses$write curses$clrtoeol
+    curses$move
+    curses$setattrs
+    curses$refresh
+;
+    
+
+:runfilters |:oldcur|
+    "Filtering.." writestatus
+    ?List isnone not if
+        ?MainListWindow?`getcur@ fst
+    else
+        none
+    then !oldcur
+    
+    ?MasterList ?Filters each {
+        i snd filter
+    } !List
+    
+    ?oldcur isnone not if
+        ?oldcur ?MainListWindow?`setcurtostring@
+    then
+    ?MainListWindow?`recentre@
+;
+
+
+:mkmainwindow |:this,start,cur|
+     0!start 0!cur
+    "main" 0 0 WIDTH 20 - HEIGHT 2- [PAIR_BLUEBACK] BORDER_RIGHT window
+    [%
+     `draw (|:t|
+         # might have changed due to filter
+         curses$getattrs
+         ?this?`drawborders@
+         0 ?this?`h range each {
+             ?this?`x ?this?`y i + curses$move
+             ?start i + !t
+             ?t ?List len < if
+                 ?t ?cur = if ATTR_HIGHLIGHT else ATTR_NORMAL then
+                 curses$setattrs
+                 ?t ?List get fst
+             else
+                 ""
+             then
+             ?this?`w trunc
+             ?this?`w padright
+             curses$write
+         }
+         ?this?`drawcoords@
+         curses$setattrs
+     ),
+     `recentre (
+         ?List len if
+             ?cur ?List len > if
+                 ?List len 1 - !cur
+             then
+             ?cur ?this?`h 2/ - !start
+             ?start 0 < if 0 !start then
+         else
+             0!cur
+         then
+     ),
+     `setcurtostring (|s:|
+         0 ?List len range each {
+             i ?List get fst ?s = if i !cur leave then
+         }
+         ?this?`recentre@
+     ),
+     `getcur (
+         ?List len if
+             ?cur ?List get
+         else
+             "" # not none, it causes errors. This is safer?
+         then
+     ),
+     `search (|s:r,oldcur|
+         ?cur!oldcur
+         none!cur
+         ?s regex$compile !r
+         # first forwards
+         ?cur ?List len range each {
+             i ?List get fst ?r regex$match len if
+                 i!cur leave
+             then
+         }
+         ?cur isnone if
+             0 ?cur range each {
+                 i ?List get fst ?r regex$match len if
+                     i!cur leave
+                 then
+             }
+         then
+         ?cur isnone if
+             "not found" writestatus
+             ?oldcur!cur
+         else
+             ?this?`recentre@
+         then
+     ),
+     `moveforw (|n:|
+         ?n isnone if ?this?`h 2/ !n then
+         ?start ?n + !n
+         ?n ?List len ?this?`h - <= if
+             ?n !start
+         else
+             ?List len ?this?`h - !start
+             ?start 0 < if 0 else ?start then !start
+         then
+         ?cur ?start < if 
+             ?start !cur
+         then
+     ),
+     `moveback (|n:|
+         ?n isnone if ?this?`h 2/ !n then
+         ?start ?n - !n
+         ?n 0 < if 0 else ?n then !start
+         ?cur ?start - ?this?`h >= if
+             ?start ?this?`h + 1- !cur
+         then
+         ?start ?this?`h + ?cur >= if
+             ?start ?this?`h 1- + !cur
+         then
+             
+     ),
+     `selforw (|n:|
+         ?n isnone if ?this?`h 2/ !n then
+         ?cur ?n + !n
+         ?n ?List len < if
+             ?n !cur
+             ?cur ?start ?this?`h + >= if
+                 none ?this?`moveforw@
+             then
+         then
+     ),
+     `selback (|n:|
+         ?n isnone if ?this?`h 2/ !n then
+         ?cur ?n - !n
+         ?n 0 >= if
+             ?n !cur
+             ?cur ?start < if
+                 none ?this?`moveback@
+             then
+         then
+     ),
+     `drawcoords (
+         [?start,?cur,?List len] "start=%d cur=%d/%d" format writestatus
+     )
+         
+     ] + dup!this
+;
+
+20 !SideBarWidth
+20 !HelpHeight
+# filter list singleton
+:mkfilterwindow |:this|
+    "filters" 
+    WIDTH SideBarWidth - 0
+    SideBarWidth HEIGHT HelpHeight - 2- 
+    [PAIR_BLUEBACK] BORDER_TOP window
+    [%
+     `draw (
+         ?this?`drawborders@
+         # vertical bar down LHS and list
+         0 ?this?`h range each {
+             ?this?`x ?this?`y i + curses$move
+             i ?Filters len < if
+                 [i,i ?Filters get fst] "%2d) %s" format
+             else
+                 ""
+             then
+             ?HelpHeight padright curses$write             
+         }
+     )
+     ] + dup!this
+;
+
+# help list
+:mkhelpwindow |:this|
+    "help" 
+    WIDTH SideBarWidth - ?FilterListWindow?`h
+    SideBarWidth HelpHeight
+    [PAIR_BLUEBACK] BORDER_TOP window
+    [%
+     `draw (
+         ?this?`drawborders@
+         0 ?this?`h range each {
+             i ?HelpText len < if
+                 ?this?`x ?this?`y i+ curses$move
+                 i ?HelpText get curses$write
+             then
+         }
+     )
+     ] + dup!this
+;     
+
+:readline |prompt:s|
+    curses$getcursor
+    curses$getpos
+    0 HEIGHT 1- curses$move
+    ?prompt curses$write curses$clrtoeol
+    1 curses$setcursor
+    1 curses$echo
+    curses$getstr !s
+    0 curses$echo
+    0 HEIGHT 1- curses$move
+    "" WIDTH padleft curses$write
+    curses$move
+    curses$setcursor
+    ?s
+;
+    
+
+:mainloop |:key,done|
+    initialise
+    mkmainwindow !MainListWindow
+    mkfilterwindow !FilterListWindow
+    mkhelpwindow !HelpWindow
+    0!done
+    runfilters
+    {
+        ?done ifleave
+        ?MainListWindow?`draw@
+        ?FilterListWindow?`draw@
+        ?HelpWindow?`draw@
+        # bottom line
+        curses$getattrs
+        [ PAIR_GREENBACK ] curses$attrs curses$setattrs
+        0 HEIGHT 2- curses$move "" WIDTH padleft curses$write
+        curses$setattrs
+        # redraw and get char
+        curses$refresh
+        curses$getch 
+        [%
+         10 (
+             curses$end
+             ?MainListWindow?`getcur@ fst.
+             quit
+         ),
+         <<"q" asc>> (
+             1!done
+         ),
+         <<"v" asc>> (
+             [?MainListWindow?`getcur@ fst]
+             ?SysViewCmd format sys$system
+             curses$refresh # just in case something's written something
+         ),
+         <<"m" asc>> (
+             ?List !MasterList
+             [] !Filters
+             runfilters
+         ),
+         Right (
+             none ?MainListWindow?`moveforw@
+         ),
+         Left (
+             none ?MainListWindow?`moveback@
+         ),
+         Up ( 
+             1 ?MainListWindow?`selback@
+         ),
+         Down ( 
+             1 ?MainListWindow?`selforw@
+         ),
+         <<"/" asc>> (
+             "Wrapping search: " readline ?MainListWindow?`search@
+         ),
+         <<"+" asc>> (|:t|
+             "Positive filter: " readline !t
+             ?t len if
+                 ["+" ?t +, ?t mkaddfilter] ?Filters push
+             then
+             runfilters
+         ),
+         <<"-" asc>> (|:t|
+             "Negative filter: " readline !t
+             ?t len if
+                 ["+" ?t +, ?t mksubfilter] ?Filters push
+             then
+             runfilters
+         ),
+         <<"c" asc>> (|:t|
+             "Content filter: " readline !t
+             ?t len if
+                 ["con:" ?t +, ?t mkcontentfilter] ?Filters push
+             then
+             runfilters
+         ),
+         <<"r" asc>> (
+             "Remove filter: " readline 
+             rmfilter
+             runfilters
+         ),
+         <<"s" asc>> (|:fn,f|
+             "Filename: " readline !fn
+             ?fn len if
+                 try 
+                     ?fn redir
+                     ?List each {i fst.}
+                     endredir
+                 catch :ex$failed
+                     "cannot open file (press a key)" writestatus
+                     curses$getch drop
+                 endtry
+             then
+         )
+         ] get@
+    }
+    "END".
+    curses$end
+;
+    
+mainloop
+

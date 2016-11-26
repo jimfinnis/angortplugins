@@ -8,6 +8,7 @@
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_video.h>
+#include <SDL2/SDL_mouse.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL2_gfxPrimitives.h>
@@ -100,6 +101,11 @@ static void openwindow(const char *title, int w,int h,int flags){
     SDL_RenderFillRect(renderer,NULL);
     SDL_RenderPresent(renderer);
     forecol.set();
+}
+
+%wordargs showmouse n (boolean --) show/hide the mouse cursor
+{
+    SDL_ShowCursor(p0);
 }
 
 %word fullscreenopen (w/none h/none --) init SDL and open a fullscreen hw window

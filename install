@@ -3,3 +3,6 @@
 DIR=/usr/local/share/angort
 mkdir -pv $DIR
 cp libs/*.angso $DIR
+
+mkdir -pv $DIR/cursesutils
+cp curses/utils/*.ang $DIR/cursesutils

@@ -2,9 +2,10 @@
 
 package mpcc
 
-[`sys,`mpc,`id3,`io] each { i library drop}
+[`curl,`time,`regex, `sys,`mpc,`id3,`io] each { i library drop}
+require "ansiterm.ang" drop
 
-"HOME" sys$getenv !Home
+"HOME" getenv !Home
 
 :connect
     none 0 mpc$connect;
@@ -57,6 +58,7 @@ private
 :showlist |startidx,endidx:list,titlen,artlen,stat,i|
     mpc$list !list
     mpc$stat !stat
+    `blue ansiterm$setfc std$p
     "List length: " std$p ?list len.
     
     # get the bit of the list we want
@@ -82,17 +84,22 @@ private
     ?startidx !i
     ?list each {
         ?i ?stat?`pos = if
-            ">> " std$p
+            `red ansiterm$setfc ">> " + std$p
         else
             "   " std$p
         then
         
-        [?i, 
+        [
+         <<`yellow ansiterm$setfc>>,
+         ?i, 
+         <<`blue ansiterm$setfc>>,
          i?`artist chknone ?artlen trunc ?artlen padleft,
+         <<`green ansiterm$setfc>>,
          i?`title  chknone ?titlen trunc ?titlen padleft] 
-        "%4d %s %s" format .
+        "%s%4d %s%s %s%s" format .
         ?i 1+ !i
     }
+    ansiterm$rset p
 ;
 
 # get the track number from the MPD track number string e.g. "11/14" gives 11. 
@@ -237,8 +244,55 @@ global list # force a new definition in this namespace
     then
     ?stat?`repeat "Repeat" showbool "    " std$p
     ?stat?`random "Random" showbool nl
-    
+    ?stat?`update if "UPDATING". then
 ;
+
+:statstr |s,sym,c:|
+    ?sym ?s get if ?c else "." then;
+    
+# used to wrap command sequences which do not output text, for readline()
+# and prompts
+:wrapseq |s:| "\001" ?s + "\002" +;
+
+
+:longprompt |g,s,c:t,list,song,stat|
+    try
+        mpc$stat !stat
+        #stat chars
+        ""
+        `blue ansiterm$setfbc wrapseq +
+        ?stat `repeat "r" statstr +
+        ?stat `random "R" statstr +
+        ?stat `update "u" statstr +
+        ?stat?`state <<[%
+           `play ">",
+           `stop "s",
+           `pause "p"
+           ]>> get !t
+        ?t isnone if "?" else ?t then + 
+        " " +
+        # list position
+        `green ansiterm$setfbc wrapseq +
+        mpc$list !list
+        ?stat?`pos + "/" + ?list len + " " +
+        ?stat?`state `play = ?stat?`state `pause = or if
+            ?stat?`pos ?list get !song
+            ?song?`title chknone 20 trunc + "/" +
+            ?song?`album chknone 20 trunc + "/" +
+            ?song?`artist chknone 20 trunc + 
+        then
+        "|   "+
+
+    catch: ex$failed,ex$notready
+        clear "ERR"
+    endtry
+    `yellow ansiterm$setfbc wrapseq +
+    " " + ?g + "|" + ?s + " " + ?c + " " +
+    ansiterm$rset wrapseq +
+;
+
+?longprompt cli$prompt
+
 
 :v mpc$setvol;
 
@@ -405,6 +459,105 @@ global list # force a new definition in this namespace
 # add words here for your standard connections
 :pi "pi" 0 mpc$connect;
 :cran "cranberry" 0 mpc$connect;
+
+
+
+# experimental stuff for mp3/shoutcast
+
+:addmp3 |n:|
+    [%
+     `name ?n,
+     `album "Radio",
+     `title ?n
+     ]
+    mpc$add
+;
+
+# this works OK for radio 3!
+:addshoutcast |n:rxFile,rxTitle,filelist,titlelist,t,curl|
+    "File.*" regex$compile !rxFile
+    "Title.*" regex$compile !rxTitle
+    [] !filelist
+    [] !titlelist
+    
+    # first, grab the curl file
+    try
+        curl$make !curl
+        ?curl
+        [%
+         `url ?n
+         ]
+        curl$setopt curl$perform
+        isnone not if "cannot open URL" `scerror throw then
+        
+        ?curl curl$data "\n" split 
+        each {
+            cases
+                i ?rxFile regex$match len if
+                    i "=" split !t
+                    ?t shift 4 -1 substr toint !n
+                    ?t "=" intercalate ?n ?filelist set
+                case
+                i ?rxTitle regex$match len if
+                    i "=" split !t
+                    ?t shift 5 -1 substr toint !n
+                    ?t "=" intercalate ?n ?titlelist set
+                case
+            otherwise
+        }
+            
+        ?filelist ?titlelist (|a,b:| 
+            [%
+             `name ?a,
+             `title ?b]
+        ) zipWith
+        (?`name isnone not)filter
+         
+        each{
+            "adding " std$p i?`name .
+            i add}
+    catch :scerror
+        "Error : " std$p
+        drop .
+    endtry
+;
+
+# special radio stations!
+
+:radio3
+    clr 
+    "http://open.live.bbc.co.uk/mediaselector/5/select/version/2.0/mediaset/http-icy-aac-lc-a/format/pls/vpid/bbc_radio_three.pls"
+    addshoutcast p
+;
+
+:divline
+    clr
+    "http://thedividingline.com:8000/dlbn.mp3"
+    addmp3 p
+;
+
+:progzilla
+    clr "http://stream1.hippynet.co.uk:8005/live"
+    addmp3 p
+;
+
+# live streaming from darkice->icecast2 on terence.
+# See StreamingAudioToPi on terence, but the basics are
+# to run darkice -c darkice.cfg in that directory before
+# running this.
+:terence
+    clr "http://192.168.2.10:8000/terence"
+    addmp3 p
+;
+
+# live streaming from darkice->icecast2 on imble.
+# See StreamingAudioToPi on terence, but the basics are
+# to run darkice -c darkice.cfg in that directory before
+# running this.
+:imble
+    clr "http://208.113.132.162:8000/wibblings"
+    addmp3 p
+;
 
 endpackage import
 

@@ -27,7 +27,7 @@ public:
     Matrix3x3 m;
     virtual ~MatrixWrapper(){}
     MatrixWrapper(Matrix3x3 &_v){
-       m = _v;
+        m = _v;
     }
 };
 
@@ -142,6 +142,21 @@ static Vector2DType tV2;
     Types::tFloat->set(a->pushval(),v->y);
 }
 
+%word x (v -- x) get x onto stack
+{
+    Value *p;
+    a->popParams(&p,"A",&tV2);
+    Vector2D *v = tV2.get(p);
+    Types::tFloat->set(a->pushval(),v->x);
+}
+%word y (v -- y) get y onto stack
+{
+    Value *p;
+    a->popParams(&p,"A",&tV2);
+    Vector2D *v = tV2.get(p);
+    Types::tFloat->set(a->pushval(),v->y);
+}
+
 %wordargs angle A|vec (v -- n) get angle from Y axis
 {
     a->pushFloat(p0->angle());
@@ -194,7 +209,7 @@ static Vector2DType tV2;
     m.mul(*p,*q);
     tM33.set(a->pushval(),&m);
 }
-    
+
 %wordargs xform AB|vec,mat (vec mat -- vec) matrix transform
 {
     tV2.set(a->pushval(),p1->transform(*p0));
@@ -243,14 +258,14 @@ static Vector2DType tV2;
     Vector2D *n = tV2.get(rhs);
     tV2.set(a->pushval(),*m + *n);
 }
-    
+
 %binop vec2d sub vec2d
 {
     Vector2D *m = tV2.get(lhs);
     Vector2D *n = tV2.get(rhs);
     tV2.set(a->pushval(),*m - *n);
 }
-    
+
 %binop vec2d mul number
 {
     Vector2D *m = tV2.get(lhs);
@@ -267,3 +282,40 @@ static Vector2DType tV2;
     tV2.set(a->pushval(),*m * n);
 }
 
+/// collide with a circle
+inline bool collide(Vector2D &w1, Vector2D& w2,double xc,double yc,double r){
+    float a = w2.x - w1.x;
+    float b = w2.y - w1.y;
+    float c = xc - w1.x;
+    float d = yc - w1.y;
+    if ((d*a - c*b)*(d*a - c*b) <= r*r*(a*a + b*b)) {
+        // Collision is possible
+        if (c*c + d*d <= r*r) {
+            // Line segment start point is inside the circle
+            return true;
+            
+        }
+        else if ((a-c)*(a-c) + (b-d)*(b-d) <= r*r) {
+            // Line segment end point is inside the circle
+            return true;
+        }
+        else if (c*a + d*b >= 0 && c*a + d*b <= a*a + b*b) {
+            // Middle section only
+            return true;
+        }
+    }
+    return false;
+}
+
+
+%wordargs circlesegcollide AAAn|vec (end1 end2 centre rad --) circle/line segment colliding?
+{
+    bool rv = collide(*p0,*p1,p2->x,p2->y,p3);
+    a->pushInt(rv?1:0);
+}
+
+
+%init
+{
+    fprintf(stderr,"Initialising VECTOR2D plugin, %s %s\n",__DATE__,__TIME__);
+}
