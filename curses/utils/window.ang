@@ -1,0 +1,52 @@
+#
+# window with borders class, doesn't use curses windowing
+# (yet)
+
+
+1 const BORDER_TOP
+2 const BORDER_LEFT
+4 const BORDER_RIGHT
+8 const BORDER_BOTTOM
+
+:vertbar |x,y1,y2:| # from y1 to y2
+    ?y1 ?y2 1+ range each {
+        ?x i curses$move " " curses$write
+    }
+;
+    
+
+:window |name,x,y,w,h,bordercolpair,flags:|
+    ?bordercolpair curses$attrs !bordercolpair
+    [%
+     `drawborders (
+         curses$getattrs
+         curses$getpos
+         ?bordercolpair curses$setattrs
+         ?flags BORDER_TOP band if
+             ?x ?y curses$move
+             ?name ?w padright curses$write
+         then
+         ?flags BORDER_BOTTOM band if
+             ?x ?y curses$move
+             " " ?w padleft curses$write
+         then
+         ?flags BORDER_LEFT band if
+             ?x ?y ?y ?h + 1 - vertbar
+         then
+         ?flags BORDER_RIGHT band if
+             ?x ?w + 1 - ?y ?y ?h + 1 - vertbar
+         then
+         curses$move
+         curses$setattrs
+     ),
+     # values of xywh given inside the border
+     `x ?x ?flags BORDER_LEFT band if 1+ then,
+     `y ?y ?flags BORDER_TOP band  if 1+ then,
+     `w ?w ?flags BORDER_LEFT band if 1- then
+           ?flags BORDER_RIGHT band if 1- then,
+     `h ?h ?flags BORDER_TOP band if 1- then
+           ?flags BORDER_BOTTOM band if 1- then
+     
+     ]
+;
+     
