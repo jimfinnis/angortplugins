@@ -136,6 +136,7 @@ class CSV  {
     
     
 public:
+    bool colsGiven; // true if "columns" set, so we don't override them
     int numCols;
     const char **colNames;
     
@@ -152,8 +153,11 @@ public:
             for(iter.first();!iter.isDone();iter.next()){
                 colNames[i++] = strdup(iter.current()->toString().get());
             }
-            
+            colsGiven=true;
         }
+        else
+            colsGiven=false;
+        
         // do we consider the first line to be just data?
         noHead = hgetintdef(h,"nohead",0)!=0;
         
@@ -188,12 +192,12 @@ public:
         // do this every time we start a new file, so we can
         // get a new set of column names (and not read the first
         // line of the subsequent files as a line of data)
-        if(colNames){
+        if(colNames && !colsGiven){
             for(int i=0;i<numCols;i++)
                 if(colNames[i])free((void *)colNames[i]);
             delete [] colNames;
+            colNames=NULL;
         }
-        colNames=NULL;
     }
     
     // process a line of input and set the value accordingly. Will throw
