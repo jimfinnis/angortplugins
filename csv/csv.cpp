@@ -284,8 +284,14 @@ public:
                         case 'i':
                             Types::tInteger->set(&vout,atoi(s));
                             break;
+			case 'l':
+			    Types::tLong->set(&vout,atol(s));
+			    break;
                         case 'f':
                             Types::tFloat->set(&vout,atof(s));
+                            break;
+                        case 'd':
+                            Types::tDouble->set(&vout,atof(s));
                             break;
                         case 's':
                         default:
