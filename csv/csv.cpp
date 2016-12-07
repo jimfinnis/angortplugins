@@ -22,8 +22,8 @@
  *   `partial if true will allow rows with less than the number of columns
  *          to be accepted, with list/hash entries created for the number
  *          present. (default false).
- *   `types sets a column type string consisting of the chars "i",
- *          "f" or "s" (int,float,string). If only one char is 
+ *   `types sets a column type string consisting of the chars "i", "l", "d",
+ *          "f" or "s" (int,long,double,float,string). If only one char is 
  *          provided, it's used for all cols. Otherwise the char
  *          used is types[colname%strlen(types)]
  */
@@ -254,8 +254,14 @@ public:
                         case 'i':
                             Types::tInteger->set(vout,atoi(s));
                             break;
+			case 'l':
+			    Types::tLong->set(vout,atol(s));
+			    break;
                         case 'f':
                             Types::tFloat->set(vout,atof(s));
+                            break;
+                        case 'd':
+                            Types::tDouble->set(vout,atof(s));
                             break;
                         case 's':
                         default:
