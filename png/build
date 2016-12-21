@@ -1,0 +1,12 @@
+#!/bin/bash
+source ../base.sh
+makewords png
+
+g++ -fPIC -O3 -c -Wall png.plugin.cpp
+
+g++  -shared -Wl,-soname,png.angso \
+    -o ../libs/png.angso \
+    png.plugin.o\
+    -lpng
+    
+

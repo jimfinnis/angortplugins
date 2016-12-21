@@ -297,6 +297,12 @@ v      : view
      ] + dup!this
 ;     
 
+:view |f:|
+    [?f]
+    ?SysViewCmd format sys$system
+    curses$refresh # just in case something's written something
+;
+
 :readline |prompt:s|
     curses$getcursor
     curses$getpos
@@ -344,9 +350,8 @@ v      : view
              1!done
          ),
          <<"v" asc>> (
-             [?MainListWindow?`getcur@ fst]
-             ?SysViewCmd format sys$system
-             curses$refresh # just in case something's written something
+             MainListWindow?`getcur@ fst
+             view
          ),
          <<"m" asc>> (
              ?List !MasterList

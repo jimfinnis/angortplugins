@@ -1,0 +1,11 @@
+"../libs/png" library drop
+
+100 100 png$make !I
+
+[255,0,0,255] png$mkcol png$col 0 0 100 20 ?I png$rect
+[0,255,0,255] png$mkcol png$col 0 40 100 20 ?I png$rect
+[0,0,255,255] png$mkcol png$col 0 80 100 20 ?I png$rect
+
+
+
+?I "foo.png" png$write quit
