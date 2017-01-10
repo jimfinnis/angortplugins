@@ -22,6 +22,8 @@
  *   `partial if true will allow rows with less than the number of columns
  *          to be accepted, with list/hash entries created for the number
  *          present. (default false).
+ *   `trim if strings should be trimmed of surrounding whitespace
+ *          (default true).
  *   `types sets a column type string consisting of the chars "i", "l", "d",
  *          "f" or "s" (int,long,double,float,string). If only one char is 
  *          provided, it's used for all cols. Otherwise the char
@@ -53,6 +55,14 @@ inline void clearList(ArrayList<char *> *l){
         free(*iter.current());
     }
     l->clear();
+}
+
+// trim a string - may modify the string, and will return ptr to start
+inline char *trimstr(char *s){
+    while(isspace(*s))s++; // skip start
+    char *p=s+strlen(s)-1; // go to end
+    while(isspace(*p))*p--=0;
+    return s;
 }
 
 // temp list used for each line
@@ -121,6 +131,7 @@ class CSV  {
     int skipLines; // skip N lines 
     bool createList; // create lists for each row, not hashes
     bool partial; // permit partial lines
+    bool trim; // trim whitespace
     char delim; // delimiter
     
     // if true, holds a string of column type chars. These are
@@ -172,6 +183,9 @@ public:
         
         // partial lines accepted?
         partial = hgetintdef(h,"partial",0)!=0;
+        
+        // trim whitespace?
+        trim = hgetintdef(h,"trim",1)!=0;
         
         // types
         types = hgetstrdef(h,"types",NULL);
@@ -237,7 +251,8 @@ public:
                     sprintf(buf,"V%d",i);
                     colNames[i] = strdup(buf);
                 } else
-                    colNames[i] = strdup(*iter.current());
+                    colNames[i] = strdup(trimstr(*iter.current()));
+                    
             }
         } else {
             ArrayList<char *> *l = splitLine(s,delim,numCols);
@@ -265,7 +280,7 @@ public:
                             break;
                         case 's':
                         default:
-                            Types::tString->set(vout,s);
+                            Types::tString->set(vout,trim?trimstr(s):s);
                             break;
                         }
                     } else {
@@ -295,7 +310,7 @@ public:
                             break;
                         case 's':
                         default:
-                            Types::tString->set(&vout,s);
+                            Types::tString->set(&vout,trim?trimstr(s):s);
                             break;
                         }
                     } else {
