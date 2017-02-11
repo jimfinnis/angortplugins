@@ -3,13 +3,12 @@
 
 -1 !autogc # turn off major GC
 
-:frand # (max -- num) random float
-    rand 50000 % 50000.0 / *;
 
 3.1415927 const PI
 PI 2 * const TWOPI
 # return x,y on the stack - a random vector of length len
-:randv |len:| TWOPI frand dup
+
+:randv |len:| TWOPI frand  * dup
     cos ?len * 
     swap 
     sin ?len *;
@@ -18,7 +17,7 @@ PI 2 * const TWOPI
 :randc |:f| (rand 128 % 128+)!f [?f@,?f@,?f@,255];
 
 :mkthingy |:this,dx,dy| 
-    2 frand dup* randv !dy !dx
+    2 frand  * dup* randv !dy !dx
     [% dup!this
      `x ?Width 2/,
      `y ?Height 2/,
@@ -48,7 +47,7 @@ PI 2 * const TWOPI
 (dup x nl "q" asc = if done then) onkeydown
 (
     clear
-#    ?Thingies each { i?`move@ i?`draw@ }
+    ?Thingies each { i?`move@ i?`draw@ }
     300 300 30 aacircle
     300 300 20 filledcircle
     flip

@@ -49,11 +49,13 @@ public:
         return (Regex *)(v->v.gc);
     }
     
-    void set(Value *v,const char *s){
+    Regex *set(Value *v,const char *s){
         v->clr();
         v->t=this;
-        v->v.gc = new Regex(s);
+        Regex *r = new Regex(s); 
+        v->v.gc = r;
         incRef(v);
+        return r;
     }
 };
 
@@ -64,8 +66,17 @@ static RegexType tR;
 %wordargs compile s (string -- compiled regex) compile a regex
 {
     char *s = strdup(p0); // copy to avoid pushval overwrite
-    tR.set(a->pushval(),s);
+    Value *v = a->pushval();
+    Regex *r = tR.set(v,s);
     free(s);
+    
+    
+    if(r->errorcode){
+        int size = regerror(r->errorcode,r->r,NULL,0)+1;
+        char *s = (char *)alloca(size);
+        regerror(r->errorcode,r->r,s,1024);
+        throw RUNT(EX_FAILED,"").set("regex compile error: %s",s);
+    }
 }
 
 %wordargs chk A|regex (regex -- none or string) error check
@@ -87,6 +98,12 @@ static RegexType tR;
     ArrayList<Value> *list = Types::tList->set(&v);
     int off=0;
     int flags = 0;
+    if(p1->errorcode){
+        int size = regerror(p1->errorcode,p1->r,NULL,0)+1;
+        char *s = (char *)alloca(size);
+        regerror(p1->errorcode,p1->r,s,1024);
+        throw RUNT(EX_CORRUPT,"").set("bad regex in use: %s",s);
+    }
     for(;;){
         int rv = regexec(p1->r,p0+off,1,&match,flags);
         if(rv == REG_NOMATCH)
