@@ -88,7 +88,27 @@ inline double time_diff(timespec start, timespec end)
     tTM.set(a->pushval(),tm);
 }
 
-// can subtract two times, but nothing else. Have to use TMTS as the name here,
+%wordargs tolong A|tm (tm -- long) convert time to long integer
+{
+    a->pushLong(mktime(p0));
+}
+
+%wordargs longtotimelocal L (long -- tm) convert time from long integer (local time)
+{
+    time_t t = (time_t)p0;
+    Timestruct tm;
+    localtime_r(&t,&tm);
+    tTM.set(a->pushval(),tm);
+}
+
+%wordargs longtotimegmt L (long -- tm) convert time from long integer (GMT)
+{
+    time_t t = (time_t)p0;
+    Timestruct tm;
+    gmtime_r(&t,&tm);
+    tTM.set(a->pushval(),tm);
+}
+
 // because wrappers use the ID as the internal code (see wrappers.h constructors)
 
 %binop TMTS sub TMTS
