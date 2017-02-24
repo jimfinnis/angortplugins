@@ -9,10 +9,11 @@
 #define __WRAPPERS_H
 
 
+
 // use this for structures which require allocating and deallocating
-template <class T> struct Wrapper : GarbageCollected {
+template <class T> struct Wrapper : angort::GarbageCollected {
     T *base;
-    Wrapper(T *p) : GarbageCollected() {
+    Wrapper(T *p) : angort::GarbageCollected() {
         base = p;
     }
     virtual ~Wrapper(){
@@ -21,14 +22,14 @@ template <class T> struct Wrapper : GarbageCollected {
 };
 
 template <class T>
-class WrapperType : public GCType {
+class WrapperType : public angort::GCType {
 public:
     WrapperType(const char *nameid){
         if(strlen(nameid)!=4)throw RUNT(EX_BADPARAM,"type wrapper name length must=4");
         add(nameid,nameid);
     }
     
-    T *get(Value *v){
+    T *get(angort::Value *v){
         if(!v)
             throw RUNT(EX_TYPE,"").set("Expected %s, not a null object",name);
         if(v->t!=this)
@@ -36,7 +37,7 @@ public:
         return ((Wrapper<T> *)(v->v.gc))->base;
     }
     
-    void set(Value *v,T *f){
+    void set(angort::Value *v,T *f){
         v->clr();
         v->t=this;
         v->v.gc = new Wrapper<T>(f);
@@ -47,16 +48,16 @@ public:
 
 // use this for straight types or small structures (the data is embedded
 // in the wrapper)
-template <class T> struct BasicWrapper : GarbageCollected {
+template <class T> struct BasicWrapper : angort::GarbageCollected {
     T base;
-    BasicWrapper(T p) : GarbageCollected() {
+    BasicWrapper(T p) : angort::GarbageCollected() {
         base = p;
     }
     virtual ~BasicWrapper(){ }
 };
 
 template <class T>
-class BasicWrapperType : public GCType {
+class BasicWrapperType : public angort::GCType {
 public:
     BasicWrapperType(const char *nameid){
         if(strlen(nameid)!=4)throw RUNT(EX_BADPARAM,"type wrapper name length must=4");
@@ -65,7 +66,7 @@ public:
     
     // note, this returns a ptr because of how makeWords.pl works
     // more than anything else.
-    T *get(Value *v){
+    T *get(angort::Value *v){
         if(!v)
             throw RUNT(EX_TYPE,"").set("Expected %s, not a null object",name);
         if(v->t!=this)
@@ -73,7 +74,7 @@ public:
         return &((BasicWrapper<T> *)(v->v.gc))->base;
     }
     
-    void set(Value *v,T f){
+    void set(angort::Value *v,T f){
         v->clr();
         v->t=this;
         v->v.gc = new BasicWrapper<T>(f);
