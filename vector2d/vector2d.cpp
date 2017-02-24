@@ -210,6 +210,13 @@ static Vector2DType tV2;
     tM33.set(a->pushval(),&m);
 }
 
+%wordargs inv A|mat (mat -- mat) matrix inverse
+{
+    Matrix3x3 m = p0->inverse();
+    tM33.set(a->pushval(),&m);
+}
+
+
 %wordargs xform AB|vec,mat (vec mat -- vec) matrix transform
 {
     tV2.set(a->pushval(),p1->transform(*p0));

@@ -35,24 +35,24 @@ inline double time_diff(timespec start, timespec end)
     return t;
 }
 
-%word now (-- float) get current time since start of program
+%word now (-- double get current time since start of program
 {
     struct timespec t;
     extern struct timespec progstart;
     
     clock_gettime(CLOCK_MONOTONIC,&t);
     double diff=time_diff(progstart,t);
-    a->pushFloat((float)diff);
+    a->pushDouble(diff);
 }
 
-%word absnow (-- float) -- get absolute time
+%word absnow (-- double) -- get absolute time
 {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC,&ts);
     double t = ts.tv_nsec;
     t *= 1e-9;
     t += (double)ts.tv_sec;
-    a->pushFloat((float)t);
+    a->pushDouble(t);
 }
 
 %word delay (float --) wait for a number of seconds

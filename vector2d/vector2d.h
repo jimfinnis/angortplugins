@@ -255,6 +255,8 @@ struct Matrix3x3 {
                              i20*r,i21*r,i22*r);
             
         }
+        else
+            return Matrix3x3(); // if not invertible, return identity
     }   
     
     void dump(){
