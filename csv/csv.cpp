@@ -24,6 +24,9 @@
  *          present. (default false).
  *   `trim if strings should be trimmed of surrounding whitespace
  *          (default true).
+ *   `comment indicates a string which starts a comment. Chars after
+ *          this will be ignored, and if the result is an empty string
+ *          the entire string will be ignored (default #)
  *   `types sets a column type string consisting of the chars "i", "l", "d",
  *          "f" or "s" (int,long,double,float,string). If only one char is 
  *          provided, it's used for all cols. Otherwise the char
@@ -133,6 +136,7 @@ class CSV  {
     bool partial; // permit partial lines
     bool trim; // trim whitespace
     char delim; // delimiter
+    const char *commentstart;
     
     // if true, holds a string of column type chars. These are
     // s=str,f=float,i=int. If missing, all cols are strings.
@@ -181,6 +185,9 @@ public:
         // delimiter
         delim = hgetstrdef(h,"delimiter",",")[0];
         
+        // comment start
+        commentstart = hgetstrdef(h,"comment","#");
+        
         // partial lines accepted?
         partial = hgetintdef(h,"partial",0)!=0;
         
@@ -215,14 +222,28 @@ public:
     }
     
     // process a line of input and set the value accordingly. Will throw
-    // away items created from partial output if "partial" is not set
-    void line(Value *linev,const char *s){
+    // away items created from partial output if "partial" is not set.
+    // MAY DAMAGE THE LINE.
+    void line(Value *linev, char *s){
         int numitems=0;
         
         // are we skipping?
         if(skipLines && skipLines--){
             linev->clr();
             return;
+        }
+        
+        // extract comment
+        char *cmt;
+        if(commentstart && (cmt=(char *)strstr(s,commentstart))){
+            *cmt = 0;
+            // is remaining string just whitespace?
+            char *p;
+            for(p=s;*p;p++){if(!isspace(*p))break;}
+            if(!*p){
+                linev->clr();
+                return;
+            }
         }
         
         if(!colNames && noHead){
@@ -349,7 +370,7 @@ static WrapperType<CSV> tCSV("CSVT");
 %wordargs line sA|csv (s csv -- val) parse a line, producing a hash or a list, or none if this was a skip or column header line.
 {
     Value v;
-    p1->line(&v,p0);
+    p1->line(&v,(char *)p0);
     a->pushval()->copy(&v);
 }
 

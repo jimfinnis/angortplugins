@@ -1,0 +1,15 @@
+`io library drop
+
+
+(
+    ""
+    "." io$readdir each {
+        i io$isdir if
+            i "/words.tex" + dup io$exists if
+                "r" io$open io$readfilestr +
+            else drop then
+        then
+    }
+    .
+)@
+quit
