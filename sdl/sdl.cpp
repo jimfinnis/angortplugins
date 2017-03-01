@@ -17,6 +17,7 @@
 using namespace angort;
 
 #include "texture.h"
+#include "surface.h"
 #include "font.h"
 #include "joy.h"
 
@@ -24,6 +25,8 @@ using namespace angort;
 %shared
 
 %type joystick tJoystick Joystick
+%type tex tTexture Texture
+%type surf tSurface Surface
 
 static SDL_Window *screen = NULL;
 static SDL_Renderer *renderer = NULL;
@@ -127,7 +130,7 @@ static void openwindow(const char *title, int w,int h,int flags){
         w = p[0]->toInt();
         h = p[0]->toInt();
     }
-        
+    
     openwindow("",w,h,SDL_WINDOW_FULLSCREEN|SDL_WINDOW_SHOWN);
 }
 
@@ -149,7 +152,7 @@ static void openwindow(const char *title, int w,int h,int flags){
     a->pushInt(h);
     a->pushInt(w);
 }
-    
+
 
 %word texsize (t -- height width) get texture dimensions
 {
@@ -162,14 +165,14 @@ static void openwindow(const char *title, int w,int h,int flags){
     a->pushInt(w);
 }
 
-%word load (file -- surf/none) load an image into a texture
+%word load (file -- texture/none) load an image into a texture
 {
     Value *p;
     a->popParams(&p,"s");
     
     chkscr(); // need a screen open to do format conversion
     
-//    printf("attempting load: %s\n",p->toString().get());
+    //    printf("attempting load: %s\n",p->toString().get());
     SDL_Surface *tmp = IMG_Load(p->toString().get());
     if(!tmp)
         printf("Failed to load %s\n",p->toString().get());
@@ -193,6 +196,77 @@ static void openwindow(const char *title, int w,int h,int flags){
         tTexture.set(p,tt);
         SDL_FreeSurface(tmp);
     }
+}
+
+%wordargs loadsurf s (file -- surf/none) load an image into a surface (NOT a texture)
+{
+    chkscr(); // need a screen open to do format conversion
+    
+    //    printf("attempting load: %s\n",p->toString().get());
+    SDL_Surface *tmp = IMG_Load(p0);
+    if(!tmp)
+        printf("Failed to load %s\n",p0);
+    
+    Value *p = a->pushval();
+    if(!tmp)
+        p->setNone();
+    else{
+        Surface *s = new Surface(tmp);
+        tSurface.set(p,s);
+    }
+}
+
+%wordargs surf2tex A|surf (surf -- tex) create a texture from a surface
+{
+    chkscr();
+    Value *p = a->pushval();
+    SDL_Texture *t = SDL_CreateTextureFromSurface(renderer,p0->s);
+    if(!t){
+        printf("Failed to create texture %s: %s\n",p->toString().get(),
+               SDL_GetError());
+        p->setNone();
+        return;
+    }
+    if(SDL_SetTextureBlendMode(t,SDL_BLENDMODE_BLEND))
+        printf("blend mode not supported\n");
+    Texture *tt = new Texture(t);
+    tTexture.set(p,tt);
+}
+
+%wordargs getpix iiA|surf (x y surf -- none|long) get pixel from surface
+{
+    SDL_Surface *s = p2->s;
+    
+    if(p0<0 || p1<0 || p0>=s->w || p1>=s->h){
+        a->pushNone();
+        return;
+    }
+    int bpp = s->format->BytesPerPixel;
+    uint8_t *p = (uint8_t *)s->pixels + p1*s->pitch + p0*bpp;
+    uint32_t v;
+    
+    switch(bpp){
+    case 1:
+        v = *p;
+        break;
+    case 2:
+        v = *(uint16_t*)p;
+        break;
+    case 3:
+        if(SDL_BYTEORDER == SDL_BIG_ENDIAN)
+            v= (p[0] << 16) | (p[1] << 8) | p[2];
+        else
+            v= (p[2] << 16) | (p[1] << 8) | p[0];
+        break;
+    case 4:
+        v = *(uint32_t *)p;
+        break;
+    default:
+        v=0;
+    }
+    
+    a->pushLong((long)v);
+              
 }
 
 %word blit (dx dy dw/none dh/none surf --) basic texture blit
@@ -326,7 +400,7 @@ static void openwindow(const char *title, int w,int h,int flags){
                        p[2]->toInt(),
                        p[3]->toInt());
 }
-    
+
 
 
 %word openfont (file size -- font) open a TTF font
@@ -353,8 +427,8 @@ static void openwindow(const char *title, int w,int h,int flags){
     chkscr();
     
     SDL_Surface *tmp = TTF_RenderUTF8_Blended(tFont.get(p[1])->f,
-                                             p[0]->toString().get(),
-                                             forecol.col);
+                                              p[0]->toString().get(),
+                                              forecol.col);
     
     SDL_Texture *tex = SDL_CreateTextureFromSurface(renderer,tmp);
     if(SDL_SetTextureBlendMode(tex,SDL_BLENDMODE_BLEND))
@@ -392,23 +466,23 @@ static void openwindow(const char *title, int w,int h,int flags){
 %wordargs aaellipse nnnn (x y xr yr --)
 {
     aaellipseRGBA(renderer,p0,p1,p2,p3,
-                 forecol.col.r,forecol.col.g,
-                 forecol.col.b,forecol.col.a);
+                  forecol.col.r,forecol.col.g,
+                  forecol.col.b,forecol.col.a);
 }
 
 
 %wordargs filledcircle nnn (x y radius --)
 {
     filledCircleRGBA(renderer,p0,p1,p2,
-                 forecol.col.r,forecol.col.g,
-                 forecol.col.b,forecol.col.a);
+                     forecol.col.r,forecol.col.g,
+                     forecol.col.b,forecol.col.a);
 }
 
 %wordargs filledellipse nnnn (x y xr yr --)
 {
     filledEllipseRGBA(renderer,p0,p1,p2,p3,
-                 forecol.col.r,forecol.col.g,
-                 forecol.col.b,forecol.col.a);
+                      forecol.col.r,forecol.col.g,
+                      forecol.col.b,forecol.col.a);
 }
 
 
