@@ -1,0 +1,12 @@
+#!/bin/bash
+source ../base.sh
+
+makewords complex
+
+
+g++ -fPIC -g -c -Wall complex.plugin.cpp 
+
+g++ -shared -Wl,-soname,complex.angso \
+    -o ../libs/complex.angso \
+    complex.plugin.o
+

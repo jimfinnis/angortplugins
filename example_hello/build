@@ -1,0 +1,12 @@
+#!/bin/bash
+source ../base.sh
+
+makewords hello
+
+
+g++ -fPIC -g -c -Wall hello.plugin.cpp 
+
+g++ -shared -Wl,-soname,hello.angso \
+    -o ../libs/hello.angso \
+    hello.plugin.o
+
