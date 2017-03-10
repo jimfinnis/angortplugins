@@ -31,3 +31,9 @@ for the library will need to be installed first.
 Then go back into the top directory and
 
     sudo install
+
+
+If you want to make your own plugin, a good place to start is
+by looking at example_hello for a very simple example, and
+example_complex for one which defines a type. From there,
+io shows how to make an iterable type.
