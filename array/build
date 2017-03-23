@@ -1,0 +1,12 @@
+#!/bin/bash
+source ../base.sh
+
+makewords array
+
+#g++ -fPIC -g -c -Wall array.plugin.cpp 
+g++ -fPIC -O3 -c -Wall array.plugin.cpp 
+
+g++ -shared -Wl,-soname,array.angso \
+    -o ../libs/array.angso \
+    array.plugin.o
+

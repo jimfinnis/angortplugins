@@ -1,7 +1,7 @@
 #!/bin/sh
 # Just build the standard set and not all Jim's weird ones.
 
-for d in sys "time" io regex csv json
+for d in sys "time" io regex csv json array
 do
     echo $d
     cd $d
