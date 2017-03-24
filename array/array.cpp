@@ -125,3 +125,27 @@ static WrapperType<Array> tArray("ARRM");
     }
 }
 
+%word map (array func -- array) map all array values through a function
+{
+    Value func;
+    func.copy(a->popval()); // need a local copy
+    
+    Value arrv;
+    arrv.copy(a->popval()); // ditto
+    
+    Array *inarr = tArray.get(&arrv);
+    
+    Array *outarr = new Array(inarr->ndims,inarr->dims);
+    for(int i=0;i<inarr->size;i++){
+        a->pushval()->copy(inarr->data+i);
+        a->runValue(&func);
+        outarr->data[i].copy(a->popval());
+    }
+    
+    tArray.set(a->pushval(),outarr);
+}
+
+%init
+{
+    fprintf(stderr,"Initialising ARRAY plugin, %s %s\n",__DATE__,__TIME__);
+}    
