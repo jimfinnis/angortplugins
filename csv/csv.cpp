@@ -421,6 +421,47 @@ line.
     
 }
 
+%wordargs out l (csvhashlist --) output CSV to stdout
+{
+    ArrayListIterator<Value> iter(p0);
+    ArrayList<const char *> headers;
+    
+    for(iter.first();!iter.isDone();iter.next()){
+        Value *v = iter.current();
+        Hash *h = Types::tHash->get(v);
+        // if first row, get and show headers.
+        if(!headers.count()){
+            HashKeyIterator hki(h);
+            int iidx = 0;
+            for(hki.first();!hki.isDone();hki.next()){
+                Value *hkv = hki.current();
+                const StringBuffer& hks = hkv->toString();
+                *(headers.append()) = strdup(hks.get());
+                fputs(hks.get(),a->outputStream);
+                iidx++;
+                fputc((iidx==h->count())?'\n':',',a->outputStream);
+            }
+        }
+        
+        // show the line by getting each header (keeps order)
+        for(int i=0;i<headers.count();i++){
+            Value k;
+            if(Value *vv = h->getSym(*headers.get(i))){
+                fputs(vv->toString().get(),a->outputStream);
+            }                
+            else fputs("??",a->outputStream);
+            fputc((i==h->count()-1)?'\n':',',a->outputStream);
+        }
+            
+    }
+    
+    ArrayListIterator<const char *> hi(&headers);
+    for(hi.first();!hi.isDone();hi.next()){
+        free((void *)*hi.current());
+    }
+    
+}
+
 %wordargs parseline si (s maxcols -- list) parse a single comma-separated line
 {
     Value v;
