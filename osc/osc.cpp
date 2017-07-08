@@ -29,7 +29,7 @@ static BasicWrapperType<lo_address> tLoAddr("LOAD");
         tLoAddr.set(a->pushval(),lo);
 }
 
-%wordargs send lsA|LoAddr (floatlist path port -- ret) send to path from a port, returns none on fail.
+%wordargs send lsA|LoAddr (floatlist path port -- ret) send to path on a port, returns none on fail.
 {
     lo_message msg = lo_message_new();
     ArrayListIterator<Value> iter(p0);
