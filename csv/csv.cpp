@@ -454,7 +454,6 @@ line.
         }
             
     }
-    
     ArrayListIterator<const char *> hi(&headers);
     for(hi.first();!hi.isDone();hi.next()){
         free((void *)*hi.current());

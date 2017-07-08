@@ -1,0 +1,13 @@
+#!/bin/bash
+source ../base.sh
+
+makewords osc
+
+g++ -fPIC -g -c -Wall osc.plugin.cpp 
+
+g++ -fPIC -shared -Wl,-soname,osc.angso \
+    -o ../libs/osc.angso \
+    osc.plugin.o \
+    -llo -lpthread
+    
+
