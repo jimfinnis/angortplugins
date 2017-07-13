@@ -7,6 +7,7 @@
 #include "angort/angort.h"
 #include "diamondapparatus/diamondapparatus.h"
 
+static diamondapparatus::Topic topic;
 #define THROWDIAMOND(e) throw RUNT("ex$diamond",e.what())
 using namespace angort;
 
@@ -53,17 +54,16 @@ inline void doGet(Angort *a,const char *name, int flags){
     using namespace diamondapparatus;
     
     try{
-        Topic t = get(name,flags);
-        
-        if(t.isValid()){
+        topic = get(name,flags);
+        if(topic.isValid()){
             ArrayList<Value> *list = Types::tList->set(a->pushval());
-            for(int i=0;i<t.size();i++){
-                switch(t[i].t){
+            for(int i=0;i<topic.size();i++){
+                switch(topic[i].t){
                 case DT_FLOAT:
-                    Types::tFloat->set(list->append(),t[i].f());
+                    Types::tFloat->set(list->append(),topic[i].f());
                     break;
                 case DT_STRING:
-                    Types::tString->set(list->append(),t[i].s());
+                    Types::tString->set(list->append(),topic[i].s());
                     break;
                 default:
                     throw "unsupported type";
@@ -77,6 +77,13 @@ inline void doGet(Angort *a,const char *name, int flags){
     }
     
 }
+
+%word changed (-- bool) get last topic state
+Valid after a get..(), returns whether the topic has changed;  also false if no data.
+{
+    a->pushInt(topic.state == TOPIC_CHANGED ? 1:0);
+}
+
 
 %wordargs getwaitany s (name -- list) get a topic (waiting for any data)
 Get data on a topic, waiting only if there is no data yet. Existing
