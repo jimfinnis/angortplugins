@@ -1,0 +1,11 @@
+#!/bin/bash
+source ../base.sh
+
+makewords noise
+
+g++ -fPIC -g -c -Wall noise.plugin.cpp 
+
+g++ -fPIC -shared -Wl,-soname,noise.angso \
+    -o ../libs/noise.angso \
+    noise.plugin.o -lm
+
