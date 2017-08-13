@@ -20,6 +20,9 @@ static WrapperType<PerlinNoise> tPerlin("PLNT");
 %shared
 
 %wordargs makeperlin h (hash -- perlin) make new perlin noise object
+Create a new perlin noise generator object. The hash may contain
+two values: persistence and octaves. Read up on the algorithm to see
+what these actually mean.
 {
     PerlinNoise *n = new PerlinNoise();
     n->mPersistence = hgetfloatdef(p0,"persistence",0.5);
@@ -28,6 +31,8 @@ static WrapperType<PerlinNoise> tPerlin("PLNT");
 }
 
 %wordargs get nA|perlin (float perlin -- float) get a value
+Generate a value from a perlin noise generator, given an input (typically
+a time or spatial coordinate).                                                                
 {
     a->pushFloat(p1->get(p0));
 }
