@@ -18,36 +18,37 @@ using namespace angort;
 %name sys
 %shared
 
-%word sleep (time --) sleep for some time
+%word sleep (time --) sleep for some time. Identical to time$delay.
 {
     Value *p;
     a->popParams(&p,"n");
     usleep((int)(p->toFloat()*1.0e6f));
 }
 
-%word cwd (-- working directory)
+%word cwd (-- working directory) get current directory
 {
     char buf[PATH_MAX];
     getcwd(buf,PATH_MAX);
     a->pushString(buf);
 }
 
-%wordargs chdir s (path -- success)
+%wordargs chdir s (path -- success) change current directory
 {
     a->pushInt((chdir(p0)<0)?0:1);
 }
 
-%word getpid (-- PID)
+%word getpid (-- PID) get process id
 {
     a->pushInt(getpid());
 }
 
-%word fork (-- PID)
+%word fork (-- PID) fork, returning 0 for child and PID for parent, like fork(2).
 {
     a->pushInt(fork());
 }
 
-%wordargs exec ls (arglist path --)
+%wordargs exec ls (arglist path --) perform an execv(2).
+Perform execv(2) with a list of arguments, which are converted to strings.
 {
     char **args = new char * [p0->count()+1];
     for(int i=0;i<p0->count();i++){
@@ -126,12 +127,12 @@ connected to the stdin and stdout of that process.
         
 
 static int exitcode=0;
-%wordargs system s (string --)
+%wordargs system s (string --) Perform system().
 {
     exitcode=system(p0);
 }
 
-%word getexit (-- exitcode) get exit code of prev. system call
+%word getexit (-- exitcode) get exit code of previous system call
 {
     a->pushInt(exitcode);
 }

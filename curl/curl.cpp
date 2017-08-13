@@ -186,7 +186,7 @@ inline Value *hgetsym(Hash *h,const char *s){
     delete iter;
 }
 
-%wordargs perform A|curl (curl -- error|none) perform the transfer, use curl$data to get the data
+%wordargs perform A|curl (curl -- error/none) perform the transfer, use curl$data to get the data
 {
     CURLcode rv = curl_easy_perform(p0->c);
     if(rv == CURLE_OK)
