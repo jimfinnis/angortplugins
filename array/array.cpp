@@ -95,7 +95,7 @@ static WrapperType<Array> tArray("ARRM");
     a->pushval()->copy(ptr);
 }
 
-%wordargs set A|array (val idx...idx array -- val) get data from array
+%wordargs set A|array (val idx...idx array --) get data from array
 {
     // get extra args
     int idxs[100];
