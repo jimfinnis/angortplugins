@@ -380,32 +380,32 @@ static void stackPorts(Angort *a,const char **q){
     }
 }
 
-%word onnoteon (inport callable --) set a function of type (chan note vel--) for noteon
+%word onnoteon (callable inport --) set a function of type (chan note vel--) for noteon
 {
     Value *p[2];
     a->popParams(p,"ac",&tMidiPort);
-    MidiPort *port = tMidiPort.get(p[0]);
+    MidiPort *port = tMidiPort.get(p[1]);
     if(!port->isInput)
         throw RUNT(EX_TYPE,"cannot set event on output port");
-    port->onNoteOn.copy(p[1]);
+    port->onNoteOn.copy(p[0]);
 }
-%word onnoteoff (inport callable --) set a function of type (chan note vel--) for noteoff
+%word onnoteoff (callable inport --) set a function of type (chan note vel--) for noteoff
 {
     Value *p[2];
-    a->popParams(p,"ac",&tMidiPort);
-    MidiPort *port = tMidiPort.get(p[0]);
+    a->popParams(p,"ca",&tMidiPort);
+    MidiPort *port = tMidiPort.get(p[1]);
     if(!port->isInput)
         throw RUNT(EX_TYPE,"cannot set event on output port");
-    port->onNoteOff.copy(p[1]);
+    port->onNoteOff.copy(p[0]);
 }
-%word oncc (inport callable --) set a function of type (chan ctor val--) for CC
+%word oncc (callable inport --) set a function of type (chan ctor val--) for CC
 {
     Value *p[2];
-    a->popParams(p,"ac",&tMidiPort);
-    MidiPort *port = tMidiPort.get(p[0]);
+    a->popParams(p,"ca",&tMidiPort);
+    MidiPort *port = tMidiPort.get(p[1]);
     if(!port->isInput)
         throw RUNT(EX_TYPE,"cannot set event on output port");
-    port->onCC.copy(p[1]);
+    port->onCC.copy(p[0]);
 }
 
 
