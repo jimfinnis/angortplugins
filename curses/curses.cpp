@@ -48,9 +48,18 @@ bool cursesOpen=false;
     addstr(p0);
 }
 
-%word getch (-- int) get character (as int)
+%wordargs timeout i (timeout --) set getch timeout in milliseconds (-1 for none)
 {
-    a->pushInt(getch());
+    timeout(p0);
+}
+
+%word getch (-- int) get character (as int, or None if timeout)
+{
+    int ch = getch();
+    if(ch==ERR)
+        a->pushNone();
+    else
+        a->pushInt(ch);
 }
 
 %word size (-- y x) get max xy coords

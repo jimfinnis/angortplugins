@@ -21,8 +21,7 @@
 
 using namespace angort;
 
-%name midi
-%shared
+%type midi tMidi
 
 /// all ports must be linked into this.
 std::list<class MidiPort *> portList;
@@ -90,13 +89,13 @@ public:
             a->pushInt(*d++ & 0xf);
             a->pushInt(*d++);
             a->pushInt(*d++);
-            a->runValue(&onNoteOn);
+            a->runValue(&onNoteOff);
             break;
         case 9:    // noteon : (chan key vel --)
             a->pushInt(*d++ & 0xf);
             a->pushInt(*d++);
             a->pushInt(*d++);
-            a->runValue(&onNoteOff);
+            a->runValue(&onNoteOn);
             break;
         case 11:   // CC : (chan ctor val --)
             a->pushInt(*d++ & 0xf);
@@ -132,6 +131,10 @@ public:
 
 static MidiPortType tMidiPort;
 
+%name midi
+%shared
+
+%type midiport tMidiPort MidiPort
 
 // the jack processing callback, called from the jack thread.
 static int process(jack_nframes_t nframes, void *arg){
@@ -380,32 +383,23 @@ static void stackPorts(Angort *a,const char **q){
     }
 }
 
-%word onnoteon (callable inport --) set a function of type (chan note vel--) for noteon
+%wordargs onnoteon cA|midiport (callable inport --) set a function of type (chan note vel--) for noteon
 {
-    Value *p[2];
-    a->popParams(p,"ac",&tMidiPort);
-    MidiPort *port = tMidiPort.get(p[1]);
-    if(!port->isInput)
+    if(!p1->isInput)
         throw RUNT(EX_TYPE,"cannot set event on output port");
-    port->onNoteOn.copy(p[0]);
+    p1->onNoteOn.copy(p0);
 }
-%word onnoteoff (callable inport --) set a function of type (chan note vel--) for noteoff
+%wordargs onnoteoff cA|midiport (callable inport --) set a function of type (chan note vel--) for noteoff
 {
-    Value *p[2];
-    a->popParams(p,"ca",&tMidiPort);
-    MidiPort *port = tMidiPort.get(p[1]);
-    if(!port->isInput)
+    if(!p1->isInput)
         throw RUNT(EX_TYPE,"cannot set event on output port");
-    port->onNoteOff.copy(p[0]);
+    p1->onNoteOff.copy(p0);
 }
-%word oncc (callable inport --) set a function of type (chan ctor val--) for CC
+%wordargs oncc cA|midiport (callable inport --) set a function of type (chan ctor val--) for CC
 {
-    Value *p[2];
-    a->popParams(p,"ca",&tMidiPort);
-    MidiPort *port = tMidiPort.get(p[1]);
-    if(!port->isInput)
+    if(!p1->isInput)
         throw RUNT(EX_TYPE,"cannot set event on output port");
-    port->onCC.copy(p[0]);
+    p1->onCC.copy(p0);
 }
 
 
