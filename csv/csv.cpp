@@ -18,7 +18,9 @@
  *          (names will be invented if the output is a hash)
  *          (default false)
  *   `skip defines a number of lines to ignore at the start (default zero)
- *   `delimiter sets a delimiting character (default ",")
+ *   `delimiter sets a delimiting character (default "," and "space" sets
+ *          whitespace delimiting. Note that "space" must be the string, not
+ *          the symbol `space. " " is also permitted.
  *   `partial if true will allow rows with less than the number of columns
  *          to be accepted, with list/hash entries created for the number
  *          present. (default false).
@@ -79,6 +81,16 @@ void addToList(ArrayList<char *> *l,const char *s,int len){
     *newfield = newstr;
     memcpy(newstr,s,len);
     newstr[len]=0;
+//    printf("Field added : **%s**\n",newstr);
+}
+
+// if the delimiter is ' ' also accept tabs.
+
+inline bool isdelim(const char c,const char delim){
+    if(delim==' ')
+        return c==' ' || c=='\t';
+    else
+        return c==delim;
 }
 
 // split a null-terminated line, which must not end in \n.
@@ -96,17 +108,32 @@ static ArrayList<char*> *splitLine(const char *s,const char delim,int maxCols=0)
     int cols=0;
     char *fptr=fbuf; // field start ptr
     for(;;) {
+//        printf("String remainder %s\n",s);
         // two clauses here: 
         // first says "if we're at the last column and the end,
         // fill in the last column." Second says "if columns are free,
         // or we're at or before the second to last column, and there's
         // and end or unquoted delimiter." If either are true, add.
+        
         if(((cols==maxCols-1) && *s==0) || (
-              (maxCols==0 || cols<(maxCols-1) ) && 
-              (*s==0 || (*s==delim && !quotechar)))){
+              (maxCols==0 || cols<(maxCols-1) ) &&
+              (*s==0 || (isdelim(*s,delim) && !quotechar)))){
+//            printf(" Found delim.\n");
             // delimiter found, and not in quoted field, and not
             // at maxcolumns. Add string.
             addToList(&list,fbuf,fptr-fbuf);
+            // if space delimited, skip more spaces.
+            if(delim==' '){
+                // we test both here because we need to be on
+                // the final delimiter (there's an s++ at the end
+                // of the loop)
+                while(isspace(*s)&&isspace(s[1])){
+//                    printf(" skipping space %c\n",*s);
+                    s++;
+                }
+//                printf(" Skips done, string remainder %s\n",s);
+            }
+            
             cols++;
             fptr=fbuf; // restart field buffer
         } else if(quotechar && *s==quotechar){
@@ -183,7 +210,9 @@ public:
         createList = hgetintdef(h,"list",0)!=0;
         
         // delimiter
-        delim = hgetstrdef(h,"delimiter",",")[0];
+        const char *delimstr = hgetstrdef(h,"delimiter",",");
+        if(!strcmp((const char *)delimstr,"space"))delim=' ';
+        else delim=delimstr[0];
         
         // comment start
         commentstart = hgetstrdef(h,"comment","#");
@@ -346,8 +375,9 @@ public:
         // ignore what we just read. Of course, numitems is never
         // greater than cols because of lines being split into at
         // maximum cols columns.
-        if(!partial && (numitems != numCols))
+        if(!partial && (numitems != numCols)){
             linev->clr();
+        }
     }
 };
 

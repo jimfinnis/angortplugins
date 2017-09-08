@@ -19,6 +19,12 @@
 
 using namespace angort;
 
+enum CoordMode {
+    COORD_ERROR,
+    COORD_CLIP,
+    COORD_WRAP
+};
+
 
 struct Array {
     int ndims; // how many dimensions has the array?
@@ -26,9 +32,11 @@ struct Array {
     int size; // number of elements
     Value *data; // the actual values
     Value none;
+    CoordMode cm; // how to deal with out-of-range
     
     Array(int nd,int *d){
         ndims = nd;
+        cm = COORD_ERROR;
         size = 1;
         dims = new int[nd];
         for(int i=0;i<nd;i++){
@@ -47,8 +55,22 @@ struct Array {
         int idx=0;
         int mul=1;
         for(int i=0;i<ndims;i++){
-            if(idxs[i]<0 || idxs[i]>=dims[i])return NULL;
-            idx += idxs[i]*mul;
+            int d=dims[i];
+            int j=idxs[i];
+            if(j<0 || j>=d){
+                switch(cm){
+                case COORD_ERROR:
+                    return NULL;
+                case COORD_WRAP:
+                    j=((j%d)+d)%d;
+                    break;
+                case COORD_CLIP:
+                    if(j<0)j=0;
+                    else if(j>=d)j=d-1;
+                    break;
+                }
+            }
+            idx += j*mul;
             mul*=dims[i];
         }
 //        printf("Index is %d\n",idx);
@@ -59,12 +81,34 @@ struct Array {
     }
 };
 
-static WrapperType<Array> tArray("ARRM");
+class ArrayType : public WrapperType<Array> {
+public:
+    ArrayType(const char *s) : WrapperType<Array>(s){}
+    virtual void clone(Value *out,const Value *in,bool deep=false)const;
+};
+
+static ArrayType tArray("ARRM");
+
+void ArrayType::clone(Value *out,const Value *in,bool deep)const{
+    const Array *old = tArray.get((Value *)in);
+    Array *na = new Array(old->ndims,old->dims);
+    for(int i=0;i<na->size;i++){
+        Value *v = old->data+i;
+        Value *nv = na->data+i;
+        if(deep)
+            v->t->clone(nv,v,true);
+        else
+            nv->copy(v);
+            
+    }
+}
+
 
 %type array tArray Array
 
 %name array
 %shared
+
 
 %wordargs make l (list -- array) make a new array given the dimensions as a list
 {
@@ -80,6 +124,16 @@ static WrapperType<Array> tArray("ARRM");
     }
     Array *arr = new Array(n,dims);
     tArray.set(a->pushval(),arr);
+}
+
+%wordargs setclip A|array (array --) make this array clip out of range coords
+{
+    p0->cm = COORD_CLIP;
+}
+
+%wordargs setwrap A|array (array --) make this array wrap out of range coords toroidally
+{
+    p0->cm = COORD_WRAP;
 }
 
 %wordargs get A|array (idx...idx array -- val) get data from array
