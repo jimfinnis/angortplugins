@@ -14,7 +14,7 @@ public:
         f=_t;
     }
     virtual ~Font(){
-//        printf("Destroying font\n");
+        printf("Destroying font\n");
         TTF_CloseFont(f);
     }
 };
