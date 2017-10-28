@@ -87,6 +87,14 @@ static void chkscr(){
 }
 
 static void openwindow(const char *title, int w,int h,int flags){
+    SDL_Init(SDL_INIT_EVERYTHING);
+    SDL_InitSubSystem(SDL_INIT_JOYSTICK);
+    IMG_Init(IMG_INIT_JPG|IMG_INIT_PNG);
+    TTF_Init();
+    SDL_JoystickEventState(SDL_ENABLE);
+    fprintf(stderr,"SDL initialised\n");
+    inited=true;
+    
     // must be 24-bit
     
     screen = SDL_CreateWindow(title,
@@ -680,17 +688,9 @@ static void hat2xy(int code,int *x,int *y){
 
 
 
-
 %init
 {
     fprintf(stderr,"Initialising SDL plugin, %s %s\n",__DATE__,__TIME__);
-    SDL_Init(SDL_INIT_EVERYTHING);
-    SDL_InitSubSystem(SDL_INIT_JOYSTICK);
-    IMG_Init(IMG_INIT_JPG|IMG_INIT_PNG);
-    TTF_Init();
-    SDL_JoystickEventState(SDL_ENABLE);
-    fprintf(stderr,"SDL initialised\n");
-    inited=true;
     
     a->registerProperty("col",&forecol,"sdl");
     a->registerProperty("bcol",&backcol,"sdl");
@@ -702,10 +702,13 @@ static void hat2xy(int code,int *x,int *y){
 %shutdown
 {
     fprintf(stderr,"Closing down SDL\n");
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(screen);
-    inited=false;
-    IMG_Quit();
-    TTF_Quit();
-    SDL_Quit();
+    if(screen){
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(screen);
+    }
+    if(inited){
+        IMG_Quit();
+        TTF_Quit();
+        SDL_Quit();
+    }
 }
