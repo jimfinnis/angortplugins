@@ -79,6 +79,16 @@ static void chkscr(){
         throw RUNT(EX_NOTREADY,"SDL screen not open");
 }
 
+static void initsdl(){
+    SDL_Init(SDL_INIT_EVERYTHING);
+    SDL_InitSubSystem(SDL_INIT_JOYSTICK);
+    IMG_Init(IMG_INIT_JPG|IMG_INIT_PNG);
+    TTF_Init();
+    SDL_JoystickEventState(SDL_ENABLE);
+    fprintf(stderr,"SDL initialised\n");
+    inited=true;
+}
+
 %word close (--) close SDL window
 {
     if(screen)
@@ -87,16 +97,8 @@ static void chkscr(){
 }
 
 static void openwindow(const char *title, int w,int h,int flags){
-    SDL_Init(SDL_INIT_EVERYTHING);
-    SDL_InitSubSystem(SDL_INIT_JOYSTICK);
-    IMG_Init(IMG_INIT_JPG|IMG_INIT_PNG);
-    TTF_Init();
-    SDL_JoystickEventState(SDL_ENABLE);
-    fprintf(stderr,"SDL initialised\n");
-    inited=true;
-    
     // must be 24-bit
-    
+    initsdl();
     screen = SDL_CreateWindow(title,
                               SDL_WINDOWPOS_UNDEFINED,
                               SDL_WINDOWPOS_UNDEFINED,
@@ -124,6 +126,7 @@ static void openwindow(const char *title, int w,int h,int flags){
     Value *p[2];
     a->popParams(p,"NN");
     
+    initsdl();
     int w;
     int h;
     if(p[0]->isNone()){
@@ -683,6 +686,67 @@ static void hat2xy(int code,int *x,int *y){
     a->pushInt(x);
 }
 
+%wordargs hsv2col nnn (h s v -- col) hsv floats to rgba colour
+{
+    float h = p0;
+    float s = p1;
+    float v = p2;
+    
+    float r,g,b;
+    
+    h = fmodf(h,1);
+    if(h<0)h=1+h;
+    if(h<0.0001f)h=0.0001f;
+    if(h>0.9999f)h=0.9999f;
+    if(s>1)s=1;
+    if(v>1)v=1;
+    
+    h = 6*h;
+    
+    float i = floorf(h);
+    float f = h-i;
+    
+    float m = v*(1-s);
+    float n = v*(1-(s*f));
+    float k = v*(1-(s*(1-f)));
+    
+    switch((int)i)
+    {
+    default:
+    case 0:
+        r=v;g=k;b=m;break;
+    case 1:
+        r=n;g=v;b=m;break;
+    case 2:
+        r=m;g=v;b=k;break;
+    case 3:
+        r=m;g=n;b=v;break;
+    case 4:
+        r=k;g=m;b=v;break;
+    case 5:
+        r=v;g=m;b=n;break;
+    }
+    
+    ArrayList<Value> *list = Types::tList->set(a->pushval());
+    Types::tInteger->set(list->append(),r*255);
+    Types::tInteger->set(list->append(),g*255);
+    Types::tInteger->set(list->append(),b*255);
+    Types::tInteger->set(list->append(),255);
+}
+
+%wordargs alpha ln (col alpha -- col) set colour alpha
+{
+    int r = p0->get(0)->toInt();
+    int g = p0->get(1)->toInt();
+    int b = p0->get(2)->toInt();
+    ArrayList<Value> *list = Types::tList->set(a->pushval());
+    
+    Types::tInteger->set(list->append(),r);
+    Types::tInteger->set(list->append(),g);
+    Types::tInteger->set(list->append(),b);
+    Types::tInteger->set(list->append(),p1);
+}
+    
 
 
 
