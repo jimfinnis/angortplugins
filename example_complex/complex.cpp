@@ -145,6 +145,14 @@ static ComplexType tC;
     tC.set(a->pushval(),l->r+r->r,l->i+r->i);
 }
 
+%binop complex add double
+{
+    Complex *l = tC.get(lhs);
+    float r = rhs->toDouble();
+    tC.set(a->pushval(),l->r+r,l->i);
+}
+
+
 // initialisation code. There is also an optional %shutdown.
 
 %init
