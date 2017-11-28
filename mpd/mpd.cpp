@@ -1,5 +1,5 @@
 /**
- * @file mpc.cpp
+ * @file mpd.cpp
  * @brief  Brief description of file.
  *
  */
@@ -19,7 +19,7 @@
 
 using namespace angort;
 
-%name mpc
+%name mpd
 %shared
 
 /// handles the connection. This should be created by "connect",

@@ -1,3 +1,22 @@
+# New build system
+The plugins are built with a new CMake build system, where a single
+CMakeLists.txt builds all the plugins. For each one, it will
+check library dependencies (Curl, SDL, JACK etc).
+Just do
+
+    mkdir build
+    cd build
+    cmake ..
+    make
+    
+You should end up with a load of *.angso* files.
+
+
+# Old documentation
+The old build system still survives, as the various *build*,
+*buildall* and *reallybuildall* files. This describes it.
+
+
 I've deliberately kept the build structure very simple - there's just a
 separate build script in each directory, which builds the library into the
 libs directory. This is to make it simple for you to devise a build script for

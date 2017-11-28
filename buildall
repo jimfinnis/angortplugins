@@ -1,6 +1,7 @@
 #!/bin/sh
 # Just build the standard set and not all Jim's weird ones.
 
+echo Warning : old build system! Consider using CMake!
 for d in sys "time" io regex csv json array noise
 do
     echo $d
@@ -8,4 +9,5 @@ do
     ./build
     cd ..
 done
+echo Warning : old build system! Consider using CMake!
 

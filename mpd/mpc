@@ -2,13 +2,13 @@
 
 package mpcc
 
-[`curl,`time,`regex, `sys,`mpc,`id3,`io] each { i library drop}
+[`curl,`time,`regex, `sys,`mpd,`id3,`io] each { i library drop}
 require "ansiterm.ang" drop
 
 "HOME" getenv !Home
 
 :connect
-    none 0 mpc$connect;
+    none 0 mpd$connect;
 
 #number of songs to list in a listing
 
@@ -50,14 +50,14 @@ private
 
 :dosearch |tag,str:|
     :"(tag str -- list) non exact search shortcut"
-    [% ?tag ?str] 0 mpc$search
+    [% ?tag ?str] 0 mpd$search
     # add the toString tag
     dup each{i addstrconv};
 
 # show a list of songs in the playlist
 :showlist |startidx,endidx:list,titlen,artlen,stat,i|
-    mpc$list !list
-    mpc$stat !stat
+    mpd$list !list
+    mpd$stat !stat
     `blue ansiterm$setfc std$p
     "List length: " std$p ?list len.
     
@@ -138,13 +138,13 @@ private
 public
 
 :rep |:t|
-    mpc$stat?`repeat not dup
-    mpc$setrepeat
+    mpd$stat?`repeat not dup
+    mpd$setrepeat
     "Repeat is now" showbool nl
 ;
 :rnd |:t|
-    mpc$stat?`random not dup
-    mpc$setrandom
+    mpd$stat?`random not dup
+    mpd$setrandom
     "Random is now" showbool nl
 ;
 
@@ -157,7 +157,7 @@ public
         
 :getlist
     :"(-- list) get the current playlist"
-    mpc$list dup each{i addstrconv};
+    mpd$list dup each{i addstrconv};
 
 
 :artist |name:|
@@ -177,20 +177,20 @@ public
     ?list (?`name ?str istridx isnone not) filter;
 
 :m
-    :"(cmd --) run an mpc$mpc command and list the output"
-    mpc$mpc each {i.};
+    :"(cmd --) run an mpd$mpc command and list the output"
+    mpd$mpc each {i.};
 
 global p # force a new definition in this namespace
 :p
     :"(--) start playing"
-    none mpc$play;
+    none mpd$play;
 :s
     :"(--) stop playing"
-    mpc$stop;
+    mpd$stop;
 
 :ps
     :"(--) pause"
-    mpc$pause;
+    mpd$pause;
 
 
     
@@ -206,7 +206,7 @@ global list # force a new definition in this namespace
 :l
     :"((n) --) list playlist. If stackct>1, show around that number, else show current"
     ct 0 = if
-        mpc$stat ?`pos list
+        mpd$stat ?`pos list
     else
         list
     then
@@ -219,7 +219,7 @@ global list # force a new definition in this namespace
 
 :cur |:p|
     :"(-- hash) get current playing song"
-    mpc$stat?`pos !p
+    mpd$stat?`pos !p
     ?p 0 < not if
         ?p getlist get
     else
@@ -229,8 +229,8 @@ global list # force a new definition in this namespace
 
 :stat |:stat,list|
     :"(--) show current status"
-    mpc$stat !stat
-    mpc$list !list # don't need to decorate with a toString member
+    mpd$stat !stat
+    mpd$list !list # don't need to decorate with a toString member
     
     "State : " ?stat?`state +
     "  Volume : " ?stat?`volume + +.
@@ -257,7 +257,7 @@ global list # force a new definition in this namespace
 
 :longprompt |g,s,c:t,list,song,stat|
     try
-        mpc$stat !stat
+        mpd$stat !stat
         #stat chars
         ""
         `blue ansiterm$setfbc wrapseq +
@@ -273,7 +273,7 @@ global list # force a new definition in this namespace
         " " +
         # list position
         `green ansiterm$setfbc wrapseq +
-        mpc$list !list
+        mpd$list !list
         ?stat?`pos + "/" + ?list len + " " +
         ?stat?`state `play = ?stat?`state `pause = or if
             ?stat?`pos ?list get !song
@@ -294,12 +294,12 @@ global list # force a new definition in this namespace
 ?longprompt cli$prompt
 
 
-:v mpc$setvol;
+:v mpd$setvol;
 
 :clr :"(--) clear the playlist"
-    mpc$clr;
+    mpd$clr;
 :add :"(list --) add a list of songs to the  playlist"
-    mpc$add;
+    mpd$add;
 
 :dmp |x:|
     :"(lst --) dump a list or hash"
@@ -311,19 +311,19 @@ global list # force a new definition in this namespace
     
 :d 
     :"(n --) delete item in current playlist"
-    mpc$del;
+    mpd$del;
 
 :f 
     :"(--) move forwards in current playlist"
-    mpc$next;
+    mpd$next;
 
 :b 
     :"(--) move backwards in current playlist"
-    mpc$prev;
+    mpd$prev;
 
 :g |x:|
     :"(n --) start playing from given song index in playlist"
-    ?x mpc$play;
+    ?x mpd$play;
 
 :shuf |lst:n,a,l|
     :"(list -- list) shuffle a list"
@@ -339,17 +339,17 @@ global list # force a new definition in this namespace
 
 :rm
     :"(name --) delete a playlist"
-    mpc$rm;
+    mpd$rm;
 
 :ls
     :"(--) list all stored playlists"
-    mpc$playlists each {i.};
+    mpd$playlists each {i.};
 
 :allsongs |:ids|
     :"(--list) list all songs (takes ages)"
     []
-    `artist [%] mpc$tags each {i.
-        [% `artist i] 1 mpc$search each{i dup addstrconv, }
+    `artist [%] mpd$tags each {i.
+        [% `artist i] 1 mpd$search each{i dup addstrconv, }
     }
 ;
 
@@ -401,8 +401,8 @@ global list # force a new definition in this namespace
 :savefile |n:f|
     :"(n --) save queue to local file (preserves play position)"
     ?n "w" io$open !f
-    mpc$stat ?`pos ?f io$write
-    mpc$list ?f io$write
+    mpd$stat ?`pos ?f io$write
+    mpd$list ?f io$write
 ;
 
 :addfile |n:f,p,l|
@@ -413,7 +413,7 @@ global list # force a new definition in this namespace
     "Playlist position: " std$p ?p .
     ?f io$readlist !l
     "Adding " std$p ?l len std$p " items.".
-    ?l mpc$add
+    ?l mpd$add
     # don't seek, play number will be wrong
 ;
     
@@ -428,8 +428,8 @@ global list # force a new definition in this namespace
     "Playlist position: " std$p ?p .
     ?f io$readlist !l
     "Adding " std$p ?l len std$p " items.".
-    ?l mpc$add
-    ?p 0 mpc$seek
+    ?l mpd$add
+    ?p 0 mpd$seek
 ;
 
 :sv
@@ -453,12 +453,12 @@ global list # force a new definition in this namespace
 
 :lsrt
     :"(--) sort playlist by album, then track"
-    mpc$list dup (sortFunc) fsort clr add
+    mpd$list dup (sortFunc) fsort clr add
 ;
 
 # add words here for your standard connections
-:pi "pi" 0 mpc$connect;
-:cran "cranberry" 0 mpc$connect;
+:pi "pi" 0 mpd$connect;
+:cran "cranberry" 0 mpd$connect;
 
 
 
@@ -470,7 +470,7 @@ global list # force a new definition in this namespace
      `album "Radio",
      `title ?n
      ]
-    mpc$add
+    mpd$add
 ;
 
 # this works OK for radio 3!

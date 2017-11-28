@@ -1,69 +1,19 @@
 cmake_minimum_required(VERSION 2.6)
 project(ANGORTPLUGINS)
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+include("cmake/macros.cmake")
 
-find_package(PkgConfig REQUIRED)
+set(INSTALLDIR "/usr/local/share/angort")
 
-# first arg is name of plugin, which should be the name of the
-# directory it is in. Second is words file which should
-# be converted with makewords, remainder are other sources.
-# Other libraries will need to be added separately.
-
-# remaining args
-macro(add name wordsfile)
-    # command to add a file to be converted by makewords; it's
-    # the second argument - the others are plain files.
-    
-    add_custom_command(
-        OUTPUT ${wordsfile}.cpp
-        DEPENDS ${name}/${wordsfile}
-        COMMAND perl /home/white/angort/makeWords.pl ${CMAKE_SOURCE_DIR}/${name}/${wordsfile} > ${wordsfile}.cpp
-    )
-    
-    # start the source list with that file.
-
-    set(SOURCES ${wordsfile}.cpp)
-    
-    # append the other sources, prepending the directory name to
-    # each one.
-    
-    foreach(f ${ARGN})
-        set(SOURCES ${SOURCES} ${name}/${f})
-    endforeach(f ${ARGN})
-    
-    # set up the target for a pos-independent shared lib
-
-    add_library(${name} SHARED ${SOURCES})
-#    target_link_libraries(${name} -langort)
-    set_property(TARGET ${name} PROPERTY POSITION_INDEPENDENT_CODE ON)
-
-    # the plugin dir name should also be in the include path
-
-    target_include_directories(${name} PUBLIC ${name})
-
-    # once built, copy libTARGET.so to TARGET.angso
-
-    add_custom_command(
-        TARGET ${name}
-        POST_BUILD
-        COMMAND cp $<TARGET_FILE:${name}> ${name}.angso
-    )
-endmacro(add)
-
-# this handles the basic plugins, which are in directories of the same name and contain a single
-# source file whose name is pluginname.cpp.
+#####################################################################
+#
+# add the projects down here
+#
+#
 
 
-macro(addeasy)
-    foreach(lib ${ARGV})
-        add(${lib} ${lib}.cpp)
-    endforeach(lib)
-endmacro(addeasy)
-    
-addeasy(io sys array time csv regex serial noise
-    #mpc
-)
+
+addeasy(io sys array time csv regex serial noise)
 
 add(example_complex complex.cpp)
 add(example_hello hello.cpp)
@@ -122,6 +72,7 @@ find_package(Jack)
 if(JACK_FOUND)
 addeasy(midi)
 target_link_libraries(midi ${JACK_LIBRARIES})
+target_compile_options(midi PUBLIC ${JACK_CFLAGS})
 target_include_directories(midi PUBLIC ${JACK_INCLUDE_DIRS})
 endif(JACK_FOUND)
 
@@ -129,9 +80,32 @@ find_package(Curses)
 if(CURSES_FOUND)
 addeasy(curses)
 target_link_libraries(curses ${CURSES_LIBRARIES})
+target_compile_options(curses PUBLIC ${CURSES_CFLAGS})
 target_include_directories(curses PUBLIC ${CURSES_INCLUDE_DIRS})
+file(GLOB curseutils "curses/utils/*.ang")
+install(FILES ${curseutils} DESTINATION "${INSTALLDIR}/curseutils")
 endif(CURSES_FOUND)
 
 pkg_search_module(MPDCLIENT libmpdclient)
 if(MPDCLIENT_FOUND)
-addeasy(mpdclient)
+addeasy(mpd)
+target_link_libraries(mpd ${MPDCLIENT_LIBRARIES})
+target_compile_options(mpd PUBLIC ${MPDCLIENT_CFLAGS})
+target_include_directories(mpd PUBLIC ${MPDCLIENT_INCLUDE_DIRS})
+endif(MPDCLIENT_FOUND)
+
+pkg_search_module(TAGLIB taglib)
+if(TAGLIB_FOUND)
+addeasy(id3)
+target_link_libraries(id3 ${TAGLIB_LIBRARIES})
+target_compile_options(id3 PUBLIC ${TAGLIB_CFLAGS})
+target_include_directories(id3 PUBLIC ${TAGLIB_INCLUDE_DIRS})
+endif(TAGLIB_FOUND)
+
+##################################################################
+
+# Installation target
+
+file(GLOB angsofiles "${CMAKE_BINARY_DIR}/*.angso")
+install(FILES ${angsofiles} DESTINATION ${INSTALLDIR})
+

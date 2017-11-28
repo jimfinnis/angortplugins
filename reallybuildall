@@ -2,6 +2,8 @@
 # Builds all the standard set plus Jim's oddities and fun things
 # like SDL bindings.
 
+echo Warning : old build system! Consider using CMake!
+
 ./buildall
 
 for d in mpc sdl midi serial vector2d udp curl curses diamond png osc
@@ -12,3 +14,4 @@ do
     cd ..
 done
 
+echo Warning : old build system! Consider using CMake!
