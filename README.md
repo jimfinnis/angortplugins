@@ -13,7 +13,7 @@ You should end up with a load of *.angso* files. Running
 
     sudo make install
     
-should then install them into '/usr/local/share/angort'.
+should then install them into `/usr/local/share/angort`.
 
 
 # Old documentation
