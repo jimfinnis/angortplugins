@@ -82,8 +82,8 @@ addeasy(curses)
 target_link_libraries(curses ${CURSES_LIBRARIES})
 target_compile_options(curses PUBLIC ${CURSES_CFLAGS})
 target_include_directories(curses PUBLIC ${CURSES_INCLUDE_DIRS})
-file(GLOB curseutils "curses/utils/*.ang")
-install(FILES ${curseutils} DESTINATION "${INSTALLDIR}/curseutils")
+file(GLOB cursesutils "curses/utils/*.ang")
+install(PROGRAMS ${cursesutils} DESTINATION "${INSTALLDIR}/cursesutils")
 endif(CURSES_FOUND)
 
 pkg_search_module(MPDCLIENT libmpdclient)
@@ -107,5 +107,6 @@ endif(TAGLIB_FOUND)
 # Installation target
 
 file(GLOB angsofiles "${CMAKE_BINARY_DIR}/*.angso")
-install(FILES ${angsofiles} DESTINATION ${INSTALLDIR})
+install(PROGRAMS ${angsofiles} DESTINATION ${INSTALLDIR})
+
 
