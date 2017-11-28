@@ -9,12 +9,18 @@ Just do
     cmake ..
     make
     
-You should end up with a load of *.angso* files.
+You should end up with a load of *.angso* files. Running
+
+    sudo make install
+    
+should then install them into '/usr/local/share/angort'.
 
 
 # Old documentation
-The old build system still survives, as the various *build*,
-*buildall* and *reallybuildall* files. This describes it.
+> The old build system still survives, as the various *build*,
+> *buildall* and *reallybuildall* files. This describes it.
+> **DO NOT USE** unless you really have to **OR** want to understand
+> how to build Angort plugins (CMake can be a bit hard to read).
 
 
 I've deliberately kept the build structure very simple - there's just a
