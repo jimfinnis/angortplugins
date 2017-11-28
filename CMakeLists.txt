@@ -106,7 +106,6 @@ endif(TAGLIB_FOUND)
 
 # Installation target
 
-file(GLOB angsofiles "${CMAKE_BINARY_DIR}/*.angso")
-install(PROGRAMS ${angsofiles} DESTINATION ${INSTALLDIR})
+install(PROGRAMS ${ANGSOFILES} DESTINATION ${INSTALLDIR})
 
 

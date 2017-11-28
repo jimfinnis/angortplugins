@@ -2,12 +2,13 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 find_package(PkgConfig REQUIRED)
 
+set(ANGSOFILES "")
+
 # first arg is name of plugin, which should be the name of the
 # directory it is in. Second is words file which should
 # be converted with makewords, remainder are other sources.
 # Other libraries will need to be added separately.
 
-# remaining args
 macro(add name wordsfile)
     # command to add a file to be converted by makewords; it's
     # the second argument - the others are plain files.
@@ -46,6 +47,9 @@ macro(add name wordsfile)
         POST_BUILD
         COMMAND cp $<TARGET_FILE:${name}> ${name}.angso
     )
+    # add the angso file to a list we use for installation target
+    set(ANGSOFILES ${ANGSOFILES} 
+        ${CMAKE_BINARY_DIR}/${name}.angso)
 endmacro(add)
 
 # this handles the basic plugins, which are in directories of the same name and contain a single
