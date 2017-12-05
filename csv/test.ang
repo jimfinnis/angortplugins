@@ -1,6 +1,6 @@
 "../libs/csv" library drop
 require "util.ang" drop
 
- [%  ] csv$make "test.csv" csv$read
-each{i util$show.}
+ [%  ] csv$make "foo.csv" csv$read
+each{i show.}
 quit

@@ -250,6 +250,54 @@ public:
         }
     }
     
+                    
+    void setVal(Value *vout,char typeChar,char *s){
+        switch(typeChar){
+        case 'i':
+            Types::tInteger->set(vout,atoi(s));
+            break;
+        case 'l':
+            Types::tLong->set(vout,atol(s));
+            break;
+        case 'f':
+            Types::tFloat->set(vout,atof(s));
+            break;
+        case 'd':
+            Types::tDouble->set(vout,atof(s));
+            break;
+        case 's':
+        default:
+            Types::tString->set(vout,trim?trimstr(s):s);
+            break;
+        }
+    }
+    
+    char guessType(const char *s){
+        bool isFloat=false;
+        if(*s=='-')s++;
+        while(*s){
+            if(*s=='.'){s++;isFloat=true;
+            }
+            else if(*s=='e' || *s=='E'){
+                s++;
+                isFloat=true;
+                if(*s!='+' && *s!='-'){
+                    return 's';
+                }
+            }
+            else if(!isdigit(*s)){
+                return 's';
+            }
+            s++;
+        }
+        if(isFloat){
+            return 'd';
+        } else {
+            return 'i';
+        }
+    }
+    
+    
     // process a line of input and set the value accordingly. Will throw
     // away items created from partial output if "partial" is not set.
     // MAY DAMAGE THE LINE.
@@ -313,29 +361,13 @@ public:
                 for(iter.first();!iter.isDone();iter.next(),i++){
                     char *s = *iter.current();
                     Value *vout = out->append();
+                    char typeChar;
+                    if(types)
+                        typeChar = types[i%numTypes];
+                    else
+                        typeChar = guessType(s);
+                    setVal(vout,typeChar,s);
                     numitems++;
-                    if(types){
-                        switch(types[i%numTypes]){
-                        case 'i':
-                            Types::tInteger->set(vout,atoi(s));
-                            break;
-			case 'l':
-			    Types::tLong->set(vout,atol(s));
-			    break;
-                        case 'f':
-                            Types::tFloat->set(vout,atof(s));
-                            break;
-                        case 'd':
-                            Types::tDouble->set(vout,atof(s));
-                            break;
-                        case 's':
-                        default:
-                            Types::tString->set(vout,trim?trimstr(s):s);
-                            break;
-                        }
-                    } else {
-                        Types::tString->set(vout,s);
-                    }
                 }
             } else {
                 Hash *out = Types::tHash->set(linev);
@@ -344,28 +376,12 @@ public:
                 for(iter.first();!iter.isDone();iter.next(),i++){
                     char *s = *iter.current();
                     Value vout;
-                    if(types){
-                        switch(types[i%numTypes]){
-                        case 'i':
-                            Types::tInteger->set(&vout,atoi(s));
-                            break;
-			case 'l':
-			    Types::tLong->set(&vout,atol(s));
-			    break;
-                        case 'f':
-                            Types::tFloat->set(&vout,atof(s));
-                            break;
-                        case 'd':
-                            Types::tDouble->set(&vout,atof(s));
-                            break;
-                        case 's':
-                        default:
-                            Types::tString->set(&vout,trim?trimstr(s):s);
-                            break;
-                        }
-                    } else {
-                        Types::tString->set(&vout,s);
-                    }
+                    char typeChar;
+                    if(types)
+                        typeChar = types[i%numTypes];
+                    else
+                        typeChar = guessType(s);
+                    setVal(&vout,typeChar,s);
                     out->setSym(colNames[i],&vout);
                     numitems++;
                 }
@@ -428,6 +444,38 @@ static WrapperType<CSV> tCSV("CSVT");
         a->pushval()->copy(&listv);
     }
 }
+
+%wordargs qread s|csv (filename -- list|none) parse an entire file using defaults
+Builds a CSV object with an empty hash, so that all defaults are used,
+and uses this to read the data.
+{
+    CSV *csv;
+    Hash dummy;
+    csv = new CSV(&dummy);
+    FILE *f = fopen(p0,"r");
+    if(!f){
+        a->pushNone();
+    } else {
+        csv->reset();
+        Value listv,linev;
+        ArrayList<Value> *list=Types::tList->set(&listv);
+        char buf[8192];
+        while(fgets(buf,8192,f)){
+            int l=strlen(buf);
+            if(l){
+                buf[l-1]=0;
+                csv->line(&linev,buf);
+                if(!linev.isNone()){
+                    list->append()->copy(&linev);
+                }
+            }
+        }
+        fclose(f);
+        a->pushval()->copy(&listv);
+    }
+    delete csv;
+}
+
 
 %wordargs reset A|csv (csv -- ) reset the CSV reader
 Resets the CSV reader given, so that it will parse headers as the next
