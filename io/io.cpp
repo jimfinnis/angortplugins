@@ -648,7 +648,9 @@ we're using buffered (fopen()) IO.
 Run stat() on a path, returning None if this causes an error, or a hash
 containing the following keys (with appropriate values): `mode, `uid, `gid,
 `size, `atime, `mtime, `ctime. See the manual page for stat(2) for more
-details.
+details. Also adds a string field `type, which is a character representing
+the file type: f for file, d for dir, l for symlink, s for socket, F
+for FIFO and C/B for character/block device.
 {
     Value *p;
     a->popParams(&p,"s");
@@ -666,6 +668,20 @@ details.
         h->setSymInt("atime",b.st_atime);
         h->setSymInt("mtime",b.st_mtime);
         h->setSymInt("ctime",b.st_ctime);
+        
+        char thing[2];
+        thing[1]=0;
+        if(S_ISLNK(b.st_mode))*thing='l';
+        else if(S_ISDIR(b.st_mode))*thing='d';
+        else if(S_ISCHR(b.st_mode))*thing='C';
+        else if(S_ISBLK(b.st_mode))*thing='B';
+        else if(S_ISFIFO(b.st_mode))*thing='F';
+        else if(S_ISSOCK(b.st_mode))*thing='s';
+        else if(S_ISREG(b.st_mode))*thing='f';
+        else *thing='?';
+        h->setSymStr("type",thing);
+        
+            
     } else
         res->clr();
 }
