@@ -4,11 +4,9 @@ package mpcc
 
 [`curl,`time,`regex, `sys,`mpd,`id3,`io] each { i library drop}
 require "ansiterm.ang" drop
+`future nspace [`slice] import
 
 "HOME" getenv !Home
-
-:connect
-    none 0 mpd$connect;
 
 #number of songs to list in a listing
 
@@ -255,12 +253,14 @@ global list # force a new definition in this namespace
 :wrapseq |s:| "\001" ?s + "\002" +;
 
 
+# unfortunately editline doesn't support colour, so those lines
+# are commented out.
 :longprompt |g,s,c:t,list,song,stat|
     try
         mpd$stat !stat
         #stat chars
         ""
-        `blue ansiterm$setfbc wrapseq +
+#        `blue ansiterm$setfbc wrapseq +
         ?stat `repeat "r" statstr +
         ?stat `random "R" statstr +
         ?stat `update "u" statstr +
@@ -272,7 +272,7 @@ global list # force a new definition in this namespace
         ?t isnone if "?" else ?t then + 
         " " +
         # list position
-        `green ansiterm$setfbc wrapseq +
+#        `green ansiterm$setfbc wrapseq +
         mpd$list !list
         ?stat?`pos + "/" + ?list len + " " +
         ?stat?`state `play = ?stat?`state `pause = or if
@@ -286,9 +286,9 @@ global list # force a new definition in this namespace
     catch: ex$failed,ex$notready
         clear "ERR"
     endtry
-    `yellow ansiterm$setfbc wrapseq +
+#    `yellow ansiterm$setfbc wrapseq +
     " " + ?g + "|" + ?s + " " + ?c + " " +
-    ansiterm$rset wrapseq +
+#    ansiterm$rset wrapseq +
 ;
 
 ?longprompt cli$prompt
@@ -561,5 +561,8 @@ global list # force a new definition in this namespace
 
 endpackage import
 
-# add your default connect here
-pi
+# and connect. If the env var is none, we'll pass that as 
+# the host to mpd$connect and it will connect to localhost
+
+"MPDHOST" getenv 0 mpd$connect
+
