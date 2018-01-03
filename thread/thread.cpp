@@ -6,6 +6,7 @@
 
 #include <angort/angort.h>
 #include <pthread.h>
+#include <unistd.h>
 
 using namespace angort;
 
@@ -39,30 +40,39 @@ static MyThreadHookObject hook;
 
 class Thread : public GarbageCollected {
     pthread_t thread;
-    Value func;
     Runtime *runtime;
     bool running;
 public:
+    Value func;
     Thread(Angort *ang,Value *v) : GarbageCollected(){
+        incRefCt(); // make sure we don't get deleted until complete
         func.copy(v);
         runtime = new Runtime(ang,"<thread>");
         void *_threadfunc(void *);
+//        printf("Creating thread at %p/%s\n",this,func.t->name);
         pthread_create(&thread,NULL,_threadfunc,this);
     }
     ~Thread(){
-        // should decref func anyway.
+//        printf("Thread destroyed at %p\n",this);
     }
     void run(){
         running = true;
+        const StringBuffer& buf = func.toString();
         runtime->runValue(&func);
         running = false;
         delete runtime;
+        runtime = NULL;
+        // decrement refct, and delete this if it's zero. This is kind
+        // of OK, here - it's the last thing that happens.
+        if(decRefCt())delete this; 
     }
 };
 
 void *_threadfunc(void *p){
     Thread *t = (Thread *)p;
+//    printf("starting thread at %p/%s\n",t,t->func.t->name);
     t->run();
+//    printf("Thread func terminated OK?\n");
 }
 
 
