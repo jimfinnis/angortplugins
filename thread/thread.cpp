@@ -39,15 +39,16 @@ static MyThreadHookObject hook;
 
 
 class Thread : public GarbageCollected {
-    pthread_t thread;
     Runtime *runtime;
     bool running;
 public:
     Value func;
-    Thread(Angort *ang,Value *v) : GarbageCollected(){
+    pthread_t thread;
+    Thread(Angort *ang,Value *v,Value *arg) : GarbageCollected(){
         incRefCt(); // make sure we don't get deleted until complete
         func.copy(v);
         runtime = new Runtime(ang,"<thread>");
+        runtime->pushval()->copy(arg);
         void *_threadfunc(void *);
 //        printf("Creating thread at %p/%s\n",this,func.t->name);
         pthread_create(&thread,NULL,_threadfunc,this);
@@ -73,6 +74,7 @@ void *_threadfunc(void *p){
 //    printf("starting thread at %p/%s\n",t,t->func.t->name);
     t->run();
 //    printf("Thread func terminated OK?\n");
+    return NULL;
 }
 
 
@@ -89,12 +91,12 @@ public:
     }
     
     // create a new thread!
-    void set(Value *v,Angort *ang,Value *func){
-        if(!func->t->isCallable())
-            throw RUNT(EX_TYPE,"not a callable");
+    void set(Value *v,Angort *ang,Value *func,Value *pass){
+        if(func->t != Types::tCode)
+            throw RUNT(EX_TYPE,"not a codeblock (can't be a closure)");
         v->clr();
         v->t=this;
-        v->v.gc = new Thread(ang,func);
+        v->v.gc = new Thread(ang,func,pass);
         incRef(v);
     }
 };
@@ -108,11 +110,12 @@ static ThreadType tThread;
 
 // words
 
-%wordargs create c (func --) start a new thread
+%wordargs create vc (arg func --) start a new thread
 {
-    Value v;
-    v.copy(p0);
-    tThread.set(a->pushval(),a->ang,&v);
+    Value v,p;
+    p.copy(p0);
+    v.copy(p1);
+    tThread.set(a->pushval(),a->ang,&v,&p);
 }
 
 %word lock (--) global lock
@@ -123,6 +126,24 @@ static ThreadType tThread;
 %word unlock (--) global unlock
 {
     hook.globalUnlock();
+}
+
+%wordargs join l (threadlist --) wait for threads to complete
+{
+    ArrayListIterator<Value> iter(p0);
+    
+    // check types first
+    for(iter.first();!iter.isDone();iter.next()){
+        Value *p = iter.current();
+        if(p->t != &tThread)
+            throw RUNT(EX_TYPE,"expected threads only in thread list");
+    }
+    
+    // then join each in turn.
+    for(iter.first();!iter.isDone();iter.next()){
+        Value *p = iter.current();
+        pthread_join(tThread.get(p)->thread,NULL);
+    }
 }
 
 
