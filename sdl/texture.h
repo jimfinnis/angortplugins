@@ -45,10 +45,10 @@ static TextureType tTexture;
 class TextureColProperty : public Property {
 private:
     SDL_Texture *tex;
-    Angort *a;
+    Runtime *a;
     
 public:
-    TextureColProperty(Angort *_a){
+    TextureColProperty(Runtime *_a){
         a= _a;
     }
     
@@ -89,10 +89,10 @@ public:
 class TextureAlphaProperty : public Property {
 private:
     SDL_Texture *tex;
-    Angort *a;
+    Runtime *a;
     
 public:
-    TextureAlphaProperty(Angort *_a){
+    TextureAlphaProperty(Runtime *_a){
         a= _a;
     }
     

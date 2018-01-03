@@ -81,7 +81,7 @@ public:
     }
     
     // returns number of bytes consumed
-    int processEvent(Angort *a,uint8_t *d){
+    int processEvent(Runtime *a,uint8_t *d){
         uint8_t tp = *d >> 4;
         
         switch(tp){
@@ -318,7 +318,7 @@ static void jack_shutdown(void *arg){
     p->write(data,3);
 }    
 
-static void stackPorts(Angort *a,const char **q){
+static void stackPorts(Runtime *a,const char **q){
     Value *p = a->pushval();
     ArrayList<Value> *lst=Types::tList->set(p);
     

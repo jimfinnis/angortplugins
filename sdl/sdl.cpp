@@ -756,10 +756,10 @@ static void hat2xy(int code,int *x,int *y){
 {
     fprintf(stderr,"Initialising SDL plugin, %s %s\n",__DATE__,__TIME__);
     
-    a->registerProperty("col",&forecol,"sdl");
-    a->registerProperty("bcol",&backcol,"sdl");
-    a->registerProperty("tcol",new TextureColProperty(a),"sdl");
-    a->registerProperty("talpha",new TextureAlphaProperty(a),"sdl");
+    a->ang->registerProperty("col",&forecol,"sdl");
+    a->ang->registerProperty("bcol",&backcol,"sdl");
+    a->ang->registerProperty("tcol",new TextureColProperty(a),"sdl");
+    a->ang->registerProperty("talpha",new TextureAlphaProperty(a),"sdl");
 }
 
 

@@ -73,7 +73,7 @@ static void parseArrayIntoList(Value *vv, const rapidjson::Value &v){
     }
 }
 
-static void parse(const char *s,Angort *a){
+static void parse(const char *s,Runtime *a){
     rapidjson::Document d;
     if(d.Parse(s).HasParseError()){
         throw RUNT(EX_FAILED,"").set("JSON parse error at offset %u: %s",

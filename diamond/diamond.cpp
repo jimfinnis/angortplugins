@@ -50,7 +50,7 @@ new data.
     }
 }
 
-inline void doGet(Angort *a,const char *name, int flags){
+inline void doGet(Runtime *a,const char *name, int flags){
     using namespace diamondapparatus;
     
     try{

@@ -120,16 +120,17 @@ class MyUDPServerListener: public UDPServerListener {
         setUDPProperty(s,v);
     }
 };
-MyUDPServerListener listener;
+static MyUDPServerListener listener;
+static Runtime *runtime = NULL;
 
 void setUDPProperty(const char *name,float val){
     UDPProperty *p = UDPProperty::getByName(name);
+    if(!runtime)throw RUNT(EX_FAILED,"UDP not started");
     if(p){
         p->val = val;
         if(!p->onChange.isNone()){
-            Angort *a = Angort::getCallingInstance();
-            a->pushFloat(val);
-            a->runValue(&p->onChange);
+            runtime->pushFloat(val);
+            runtime->runValue(&p->onChange);
         }
     } else if(strcmp(name,"time"))
         throw RUNT(EX_NOTFOUND,"").set("cannot find UDP property in set from remote %s",name);
@@ -137,6 +138,7 @@ void setUDPProperty(const char *name,float val){
 
 %word poll (--) send and receive queued UDP data
 {
+    if(!runtime)throw RUNT(EX_FAILED,"UDP not started");
     server.poll(); // check for incoming
     
     // send props
@@ -152,7 +154,7 @@ void setUDPProperty(const char *name,float val){
 %word addvar (name --) create a new global which mirrors the monitor
 {
     const StringBuffer& b = a->popString();
-    a->registerProperty(b.get(),new UDPProperty(b.get()));
+    a->ang->registerProperty(b.get(),new UDPProperty(b.get()));
 }
 
 %word write (string --) write a string to the UDP port
@@ -166,6 +168,7 @@ void setUDPProperty(const char *name,float val){
     initClient(p1,p2);
     server.start(p0);
     server.setListener(&listener);
+    runtime = a;
 }
 
 %wordargs onchange cs (callback(v k --) name --) set callback for change received on UDP var
