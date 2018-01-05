@@ -26,6 +26,9 @@ public:
         pthread_mutexattr_settype(&attr,PTHREAD_MUTEX_RECURSIVE);
         pthread_mutex_init(&mutex,&attr);
     }
+    ~MyThreadHookObject(){
+        pthread_mutex_destroy(&mutex);
+    }
         
     // single global mutex, nestable
     virtual void globalLock(){
@@ -41,10 +44,14 @@ static MyThreadHookObject hook;
 
 class Thread : public GarbageCollected {
     Runtime *runtime;
-    bool running;
 public:
     Value func;
+    Value retval; // the returned value
     pthread_t thread;
+    
+    bool isRunning(){
+        return runtime != NULL;
+    }
     Thread(Angort *ang,Value *v,Value *arg) : GarbageCollected(){
         incRefCt(); // make sure we don't get deleted until complete
         func.copy(v);
@@ -58,11 +65,14 @@ public:
 //        printf("Thread destroyed at %p\n",this);
     }
     void run(){
-        running = true;
         const StringBuffer& buf = func.toString();
         runtime->runValue(&func);
         hook.globalLock();
-        running = false;
+        // pop the last value off the thread runtime
+        // and copy it into the return value, if there is one.
+        if(!runtime->stack.isempty()){
+            retval.copy(runtime->stack.popptr());
+        }
         delete runtime;
         runtime = NULL;
         // decrement refct, and delete this if it's zero. This is kind
@@ -108,6 +118,23 @@ public:
 
 static ThreadType tThread;
 
+// mutex wrapper class
+struct Mutex {
+    pthread_mutex_t m;
+    Mutex(){
+        // make the mutex recursive
+        pthread_mutexattr_t attr;
+        pthread_mutexattr_init(&attr);
+        pthread_mutexattr_settype(&attr,PTHREAD_MUTEX_RECURSIVE);
+        pthread_mutex_init(&m,&attr);
+    }
+    ~Mutex(){
+        pthread_mutex_destroy(&m);
+    }
+};
+    
+    
+// the wrapper has a wrapper type..
 static WrapperType<pthread_mutex_t> tMutex("MUTX");
 
 %type mutex tMutex pthread_mutex_t
@@ -170,6 +197,18 @@ static WrapperType<pthread_mutex_t> tMutex("MUTX");
 %wordargs unlock A|mutex (mutex -- ) unlock a mutex
 {
     pthread_mutex_unlock(p0);
+}
+
+%wordargs retval A|thread (thread --) get return of a finished thread
+{
+    hook.globalLock();
+    if(p0->isRunning()){
+        hook.globalUnlock();
+        throw RUNT("ex$threadrunning","thread is still running");
+    }
+    
+    a->pushval()->copy(&p0->retval);
+    hook.globalUnlock();
 }
 
 
