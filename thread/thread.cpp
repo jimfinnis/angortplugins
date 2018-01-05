@@ -61,12 +61,14 @@ public:
         running = true;
         const StringBuffer& buf = func.toString();
         runtime->runValue(&func);
+        hook.globalLock();
         running = false;
         delete runtime;
         runtime = NULL;
         // decrement refct, and delete this if it's zero. This is kind
         // of OK, here - it's the last thing that happens.
         if(decRefCt())delete this; 
+        hook.globalUnlock();
     }
 };
 
@@ -95,10 +97,12 @@ public:
     void set(Value *v,Angort *ang,Value *func,Value *pass){
         if(func->t != Types::tCode)
             throw RUNT(EX_TYPE,"not a codeblock (can't be a closure)");
+        hook.globalLock();
         v->clr();
         v->t=this;
         v->v.gc = new Thread(ang,func,pass);
         incRef(v);
+        hook.globalUnlock();
     }
 };
 
@@ -181,6 +185,6 @@ static WrapperType<pthread_mutex_t> tMutex("MUTX");
             "-thread data stored in Runtime so we can get thread\n"
             "-finer grained lock object\n"
             );
-    a->ang->setThreadHookObject(&hook);
+    Angort::setThreadHookObject(&hook);
 }    
 
