@@ -106,7 +106,6 @@ public:
 
 
 static FileType tFile;
-static File *stdinf=NULL,*stdoutf=NULL,*stderrf=NULL;
 
 %type file tFile File
 
@@ -686,32 +685,23 @@ for FIFO and C/B for character/block device.
         res->clr();
 }
 
-%word stdin (-- stdin) stack shared stdin object
-Stack the shared file object representing the standard input stream.
+%word stdin (-- stdin) stack stdin object
+Stack a file object representing the standard input stream.
 {
-    if(!stdinf){
-        stdinf=new File(stdin);stdinf->noclose=true;
-        stdinf->incRefCt(); //ensure never deleted
-    }
-    tFile.set(a->pushval(),stdinf);
+    File *f=new File(stdin);f->noclose=true;
+    tFile.set(a->pushval(),f);
 }
-%word stdout (-- stdout) stack shared stdout object
-Stack the shared file object representing the standard output stream.
+%word stdout (-- stdout) stack stdout object
+Stack a file object representing the standard output stream.
 {
-    if(!stdoutf){
-        stdoutf=new File(stdout);stdoutf->noclose=true;
-        stdoutf->incRefCt(); //ensure never deleted
-    }
-    tFile.set(a->pushval(),stdoutf);
+    File *f=new File(stdout);f->noclose=true;
+    tFile.set(a->pushval(),f);
 }
-%word stderr (-- stderr) stack shared stderr object
-Stack the shared file object representing the standard error stream.
+%word stderr (-- stderr) stack stderr object
+Stack a file object representing the standard error stream.
 {
-    if(!stderrf){
-        stderrf=new File(stderr);stderrf->noclose=true;
-        stderrf->incRefCt(); //ensure never deleted
-    }
-    tFile.set(a->pushval(),stderrf);
+    File *f=new File(stderr);f->noclose=true;
+    tFile.set(a->pushval(),f);
 }
 
 %wordargs createfd s (name -- fd) create a file

@@ -7,6 +7,7 @@
 #include <angort/angort.h>
 #include <pthread.h>
 #include <unistd.h>
+#include "../wrappers.h"
 
 using namespace angort;
 
@@ -103,8 +104,9 @@ public:
 
 static ThreadType tThread;
 
+static WrapperType<pthread_mutex_t> tMutex("MUTX");
 
-
+%type mutex tMutex pthread_mutex_t
 %type thread tThread Thread
 
 
@@ -118,12 +120,12 @@ static ThreadType tThread;
     tThread.set(a->pushval(),a->ang,&v,&p);
 }
 
-%word lock (--) global lock
+%word glock (--) global lock
 {
     hook.globalLock();
 }
 
-%word unlock (--) global unlock
+%word unglock (--) global unlock
 {
     hook.globalUnlock();
 }
@@ -144,6 +146,26 @@ static ThreadType tThread;
         Value *p = iter.current();
         pthread_join(tThread.get(p)->thread,NULL);
     }
+}
+
+%word mutex (-- mutex) create a recursive mutex
+{
+    pthread_mutex_t *v = new pthread_mutex_t();
+    pthread_mutexattr_t attr;
+    pthread_mutexattr_init(&attr);
+    pthread_mutexattr_settype(&attr,PTHREAD_MUTEX_RECURSIVE);
+    pthread_mutex_init(v,&attr);
+    
+    tMutex.set(a->pushval(),v);
+}
+
+%wordargs lock A|mutex (mutex -- ) lock a mutex
+{
+    pthread_mutex_lock(p0);
+}
+%wordargs unlock A|mutex (mutex -- ) unlock a mutex
+{
+    pthread_mutex_unlock(p0);
 }
 
 
