@@ -11,9 +11,6 @@
 
 using namespace angort;
 
-%name thread
-%shared
-
 // thread hook object Angort uses to do... stuff.
 
 class MyThreadHookObject : public ThreadHookObject {
@@ -41,13 +38,85 @@ public:
 
 static MyThreadHookObject hook;
 
+struct MsgBuffer {
+    static const int size=128;
+    Value msgs[size];
+    int wr,rd;
+    int length;
+    pthread_mutex_t mutex;
+    pthread_cond_t cond;
+    
+    bool isEmpty(){
+        return length==0;
+    }
+    
+    bool isFull(){
+        return length==size;
+    }
+    
+    void read(Value *v){
+        if(isEmpty())printf("NO MESSAGE\n");
+        v->copy(msgs+rd);
+        rd++;
+        rd %= size;
+        length--;
+    }
+    
+    bool write(Value *v){
+        if(isFull())return false;
+        wr++;
+        wr %= size;
+        msgs[wr].copy(v);
+        length++;
+        return true;
+    }
+    
+    MsgBuffer(){
+        wr=size-1;
+        rd=0;
+        length=0;
+        pthread_mutex_init(&mutex,NULL);
+        pthread_cond_init(&cond,NULL);
+    }
+    ~MsgBuffer(){
+        pthread_mutex_destroy(&mutex);
+        pthread_cond_destroy(&cond);
+    }
+    
+    // wait for a message, blocking if we have to
+    void waitAndReceive(Value *dest){
+        pthread_mutex_lock(&mutex);
+        while(isEmpty())
+            pthread_cond_wait(&cond,&mutex);
+        read(dest);
+        pthread_mutex_unlock(&mutex);
+    }
+    
+    // this should really block if we can't send...
+    bool send(Value *v){
+        bool ok;
+        pthread_mutex_lock(&mutex);
+        ok = write(v);
+        if(ok)pthread_cond_signal(&cond);
+        pthread_mutex_unlock(&mutex);
+        return ok;
+    }
+        
+    
+};
 
+void *_threadfunc(void *);
+
+namespace angort {
 class Thread : public GarbageCollected {
+    // our run environment
     Runtime *runtime;
+    
 public:
     Value func;
     Value retval; // the returned value
     pthread_t thread;
+    MsgBuffer msgs;
     
     bool isRunning(){
         return runtime != NULL;
@@ -56,8 +125,8 @@ public:
         incRefCt(); // make sure we don't get deleted until complete
         func.copy(v);
         runtime = new Runtime(ang,"<thread>");
+        runtime->thread = this;
         runtime->pushval()->copy(arg);
-        void *_threadfunc(void *);
 //        printf("Creating thread at %p/%s\n",this,func.t->name);
         pthread_create(&thread,NULL,_threadfunc,this);
     }
@@ -81,6 +150,7 @@ public:
         hook.globalUnlock();
     }
 };
+}
 
 void *_threadfunc(void *p){
     Thread *t = (Thread *)p;
@@ -90,6 +160,16 @@ void *_threadfunc(void *p){
     return NULL;
 }
 
+
+
+
+
+
+%name thread
+%shared
+
+// crude hack - this is the message buffer for the default thread.
+static MsgBuffer defaultMsgs;
 
 class ThreadType : public GCType {
 public:
@@ -199,7 +279,11 @@ static WrapperType<pthread_mutex_t> tMutex("MUTX");
     pthread_mutex_unlock(p0);
 }
 
-%wordargs retval A|thread (thread --) get return of a finished thread
+%wordargs retval A|thread (thread -- val) get return of a finished thread
+One way of communicating with a thread is to send data into it with
+the function parameter, and receive the result (after the thread has
+completed) using thread$retval. If the thread is still running an
+exception will be thrown. Use thread$join to wait for thread completion.
 {
     hook.globalLock();
     if(p0->isRunning()){
@@ -209,6 +293,33 @@ static WrapperType<pthread_mutex_t> tMutex("MUTX");
     
     a->pushval()->copy(&p0->retval);
     hook.globalUnlock();
+}
+
+%wordargs send vv|thread (msg thread|none -- bool) send a message value to a thread
+Send a message to a thread. The default thread is indicated by "none".
+Will return a boolean indicating the send was successful. 
+{
+    MsgBuffer *b;
+    if(p1->isNone())
+        b = &defaultMsgs;
+    else {
+        Thread *t = tThread.get(p1);
+        b = &t->msgs;
+    }
+    a->pushInt(b->send(p0)?1:0);
+}
+
+%word waitrecv (--- msg) blocking message read
+Wait for a message to arrive on this thread and return it.
+{
+    MsgBuffer *b;
+    if(a->thread)
+        b = &a->thread->msgs;
+    else
+        b = &defaultMsgs;
+    Value v;
+    b->waitAndReceive(&v);
+    a->pushval()->copy(&v);
 }
 
 
