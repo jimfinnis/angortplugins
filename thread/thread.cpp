@@ -26,7 +26,7 @@ public:
     ~MyThreadHookObject(){
         pthread_mutex_destroy(&mutex);
     }
-        
+    
     // single global mutex, nestable
     virtual void globalLock(){
         pthread_mutex_lock(&mutex);
@@ -38,13 +38,13 @@ public:
 
 static MyThreadHookObject hook;
 
-struct MsgBuffer {
-    static const int size=128;
+class MsgBuffer {
+    static const int size=8;
     Value msgs[size];
     int wr,rd;
     int length;
-    pthread_mutex_t mutex;
-    pthread_cond_t cond;
+    pthread_mutex_t mutex,mutex2;
+    pthread_cond_t cond,cond2;
     
     bool isEmpty(){
         return length==0;
@@ -54,7 +54,7 @@ struct MsgBuffer {
         return length==size;
     }
     
-    void read(Value *v){
+    void _read(Value *v){
         if(isEmpty())printf("NO MESSAGE\n");
         v->copy(msgs+rd);
         rd++;
@@ -62,7 +62,7 @@ struct MsgBuffer {
         length--;
     }
     
-    bool write(Value *v){
+    bool _write(Value *v){
         if(isFull())return false;
         wr++;
         wr %= size;
@@ -70,38 +70,62 @@ struct MsgBuffer {
         length++;
         return true;
     }
-    
+public:
     MsgBuffer(){
         wr=size-1;
         rd=0;
         length=0;
         pthread_mutex_init(&mutex,NULL);
         pthread_cond_init(&cond,NULL);
+        pthread_mutex_init(&mutex2,NULL);
+        pthread_cond_init(&cond2,NULL);
     }
     ~MsgBuffer(){
         pthread_mutex_destroy(&mutex);
         pthread_cond_destroy(&cond);
+        pthread_mutex_destroy(&mutex2);
+        pthread_cond_destroy(&cond2);
     }
     
     // wait for a message, blocking if we have to
-    void waitAndReceive(Value *dest){
+    void waitAndRead(Value *dest){
         pthread_mutex_lock(&mutex);
         while(isEmpty())
             pthread_cond_wait(&cond,&mutex);
-        read(dest);
+        _read(dest);
+        pthread_cond_signal(&cond2);
+//        printf("%d SIGNALLING.\n",snark);
         pthread_mutex_unlock(&mutex);
+//        printf("%d read ok\n",snark);
     }
     
-    // this should really block if we can't send...
-    bool send(Value *v){
+    // write a message, return false if no room
+    bool writeNoWait(Value *v){
         bool ok;
         pthread_mutex_lock(&mutex);
-        ok = write(v);
+        ok = _write(v);
         if(ok)pthread_cond_signal(&cond);
         pthread_mutex_unlock(&mutex);
         return ok;
     }
-        
+    
+    // write a message, blocking if we're full.
+    void writeWait(Value *v){
+//        printf("%d write \n",snark);
+        pthread_mutex_lock(&mutex2);
+        while(isFull()){
+//            printf("%d FULL.\n",snark);
+            pthread_cond_wait(&cond2,&mutex2);
+        }
+        pthread_mutex_lock(&mutex);
+        _write(v);
+        pthread_cond_signal(&cond);
+        pthread_mutex_unlock(&mutex);
+//        printf("%d write ok\n",snark);
+        pthread_mutex_unlock(&mutex2);
+    }
+    
+    
     
 };
 
@@ -127,11 +151,11 @@ public:
         runtime = new Runtime(ang,"<thread>");
         runtime->thread = this;
         runtime->pushval()->copy(arg);
-//        printf("Creating thread at %p/%s\n",this,func.t->name);
+        //        printf("Creating thread at %p/%s\n",this,func.t->name);
         pthread_create(&thread,NULL,_threadfunc,this);
     }
     ~Thread(){
-//        printf("Thread destroyed at %p\n",this);
+        //        printf("Thread destroyed at %p\n",this);
     }
     void run(){
         const StringBuffer& buf = func.toString();
@@ -154,9 +178,9 @@ public:
 
 void *_threadfunc(void *p){
     Thread *t = (Thread *)p;
-//    printf("starting thread at %p/%s\n",t,t->func.t->name);
+    //    printf("starting thread at %p/%s\n",t,t->func.t->name);
     t->run();
-//    printf("Thread func terminated OK?\n");
+    //    printf("Thread func terminated OK?\n");
     return NULL;
 }
 
@@ -212,8 +236,8 @@ struct Mutex {
         pthread_mutex_destroy(&m);
     }
 };
-    
-    
+
+
 // the wrapper has a wrapper type..
 static WrapperType<pthread_mutex_t> tMutex("MUTX");
 
@@ -282,7 +306,7 @@ static WrapperType<pthread_mutex_t> tMutex("MUTX");
 %wordargs retval A|thread (thread -- val) get return of a finished thread
 One way of communicating with a thread is to send data into it with
 the function parameter, and receive the result (after the thread has
-completed) using thread$retval. If the thread is still running an
+                                                completed) using thread$retval. If the thread is still running an
 exception will be thrown. Use thread$join to wait for thread completion.
 {
     hook.globalLock();
@@ -295,7 +319,7 @@ exception will be thrown. Use thread$join to wait for thread completion.
     hook.globalUnlock();
 }
 
-%wordargs send vv|thread (msg thread|none -- bool) send a message value to a thread
+%wordargs sendnoblock vv|thread (msg thread|none -- bool) send a message value to a thread
 Send a message to a thread. The default thread is indicated by "none".
 Will return a boolean indicating the send was successful. 
 {
@@ -306,7 +330,21 @@ Will return a boolean indicating the send was successful.
         Thread *t = tThread.get(p1);
         b = &t->msgs;
     }
-    a->pushInt(b->send(p0)?1:0);
+    a->pushInt(b->writeNoWait(p0)?1:0);
+}
+
+%wordargs send vv|thread (msg thread|none --) send a message value to a thread
+Send a message to a thread. The default thread is indicated by "none".
+Will wait if the buffer is full.
+{
+    MsgBuffer *b;
+    if(p1->isNone())
+        b = &defaultMsgs;
+    else {
+        Thread *t = tThread.get(p1);
+        b = &t->msgs;
+    }
+    b->writeWait(p0);
 }
 
 %word waitrecv (--- msg) blocking message read
@@ -318,7 +356,7 @@ Wait for a message to arrive on this thread and return it.
     else
         b = &defaultMsgs;
     Value v;
-    b->waitAndReceive(&v);
+    b->waitAndRead(&v);
     a->pushval()->copy(&v);
 }
 
