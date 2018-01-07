@@ -84,7 +84,7 @@ inline double time_diff(timespec start, timespec end)
     time_t t;
     Timestruct tm;
     time(&t);
-    localtime_r(&t,&tm);
+    gmtime_r(&t,&tm);
     tTM.set(a->pushval(),tm);
 }
 

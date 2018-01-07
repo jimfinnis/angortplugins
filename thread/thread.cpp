@@ -141,6 +141,7 @@ public:
     Value retval; // the returned value
     pthread_t thread;
     MsgBuffer msgs;
+    int id;
     
     bool isRunning(){
         return runtime != NULL;
@@ -149,6 +150,7 @@ public:
         incRefCt(); // make sure we don't get deleted until complete
         func.copy(v);
         runtime = new Runtime(ang,"<thread>");
+        id = runtime->id;
         runtime->thread = this;
         runtime->pushval()->copy(arg);
         //        printf("Creating thread at %p/%s\n",this,func.t->name);
@@ -159,7 +161,13 @@ public:
     }
     void run(){
         const StringBuffer& buf = func.toString();
-        runtime->runValue(&func);
+        try {
+            runtime->runValue(&func);
+        } catch(Exception e){
+            hook.globalLock();
+            printf("Exception in thread %d\n",runtime->id);
+            hook.globalUnlock();
+        }
         hook.globalLock();
         // pop the last value off the thread runtime
         // and copy it into the return value, if there is one.
@@ -215,6 +223,16 @@ public:
         v->clr();
         v->t=this;
         v->v.gc = new Thread(ang,func,pass);
+        incRef(v);
+        hook.globalUnlock();
+    }
+    
+    // set a value to a thread
+    void set(Value *v, Thread *t){
+        hook.globalLock();
+        v->clr();
+        v->t = this;
+        v->v.gc = t;
         incRef(v);
         hook.globalUnlock();
     }
@@ -306,7 +324,7 @@ static WrapperType<pthread_mutex_t> tMutex("MUTX");
 %wordargs retval A|thread (thread -- val) get return of a finished thread
 One way of communicating with a thread is to send data into it with
 the function parameter, and receive the result (after the thread has
-                                                completed) using thread$retval. If the thread is still running an
+completed) using thread$retval. If the thread is still running an
 exception will be thrown. Use thread$join to wait for thread completion.
 {
     hook.globalLock();
@@ -358,6 +376,16 @@ Wait for a message to arrive on this thread and return it.
     Value v;
     b->waitAndRead(&v);
     a->pushval()->copy(&v);
+}
+
+%word cur (-- thread) return current thread
+{
+    tThread.set(a->pushval(),a->thread);
+}
+
+%wordargs id A|thread (thread -- id) get ID from thread
+{
+    a->pushInt(p0->id);
 }
 
 

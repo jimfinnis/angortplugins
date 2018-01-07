@@ -16,6 +16,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <cstddef>
 
 #include <angort/angort.h>
 #include <angort/hash.h>
@@ -504,15 +505,16 @@ static bool readval(FILE *f,Value *res){
     uint32_t typeID;
     int32_t i;
     float fl;
+    int rv;
     
     if(fread(&typeID,sizeof(typeID),1,f)<=0)
         return false;
     
     if(typeID == Types::tInteger->id) {
-        fread(&i,sizeof(i),1,f);
+        rv=fread(&i,sizeof(i),1,f);
         Types::tInteger->set(res,(int)i);
     } else if(typeID == Types::tFloat->id) {
-        fread(&fl,sizeof(fl),1,f);
+        rv=fread(&fl,sizeof(fl),1,f);
         Types::tFloat->set(res,fl);
     } else if(typeID == Types::tString->id) {
         const char *s = readstr(f);
@@ -535,7 +537,7 @@ static bool readval(FILE *f,Value *res){
 static void doreadlist(FILE *f,Value *res){
     ArrayList<Value> *list = Types::tList->set(res);
     int32_t n;
-    fread(&n,sizeof(n),1,f);
+    int rv = fread(&n,sizeof(n),1,f);
     for(int i=0;i<n;i++){
         Value *v = list->append();
         if(!readval(f,v))
@@ -546,7 +548,7 @@ static void doreadhash(FILE *f,Value *res){
     Hash *h = Types::tHash->set(res);
     
     int32_t n;
-    fread(&n,sizeof(n),1,f);
+    int rv = fread(&n,sizeof(n),1,f);
     try {
         for(int i=0;i<n;i++){
             Value k,v;
@@ -599,9 +601,13 @@ or `unknown.
     if(!d)
         a->pushNone();
     else {
+        dirent *buf = (dirent *)alloca(offsetof(struct dirent,d_name)+1024);
         Hash* h = Types::tHash->set(a->pushval());
-        while(dirent *e = readdir(d)){
+        for(;;){
+            dirent *e;
             const char *t;
+            int rv = readdir_r(d,buf,&e);
+            if(!e || rv)break;
             switch(e->d_type){
             case DT_BLK:t="blockdev";break;
             case DT_CHR:t="chardev";break;
@@ -612,7 +618,10 @@ or `unknown.
             case DT_SOCK:t="sock";break;
             default:t="unknown";break;
             }
-            h->setSymSym(e->d_name,t);
+            Value k,v;
+            Types::tString->set(&k,e->d_name);
+            Types::tSymbol->set(&v,SymbolType::getSymbol(t));
+            h->set(&k,&v);
         }
     }
 }
