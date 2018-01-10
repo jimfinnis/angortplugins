@@ -6,7 +6,6 @@
 
 #include <angort/angort.h>
 #include <pthread.h>
-#include <unistd.h>
 #include "../wrappers.h"
 
 using namespace angort;
@@ -56,7 +55,8 @@ class MsgBuffer {
     
     void _read(Value *v){
         if(isEmpty())printf("NO MESSAGE\n");
-        v->copy(msgs+rd);
+        msgs[rd].t->clone(v,msgs+rd);
+//        v->copy(msgs+rd);
         rd++;
         rd %= size;
         length--;
@@ -66,7 +66,8 @@ class MsgBuffer {
         if(isFull())return false;
         wr++;
         wr %= size;
-        msgs[wr].copy(v);
+        //        msgs[wr].copy(v);
+        v->t->clone(msgs+wr,v);
         length++;
         return true;
     }
@@ -139,6 +140,7 @@ class Thread : public GarbageCollected {
 public:
     Value func;
     Value retval; // the returned value
+    Value arg;
     pthread_t thread;
     MsgBuffer msgs;
     int id;
@@ -146,21 +148,23 @@ public:
     bool isRunning(){
         return runtime != NULL;
     }
-    Thread(Angort *ang,Value *v,Value *arg) : GarbageCollected(){
+    Thread(Angort *ang,Value *v,Value *_arg) : GarbageCollected(){
         incRefCt(); // make sure we don't get deleted until complete
         func.copy(v);
+        _arg->t->clone(&arg,_arg); // clone the argument
+//        printf("%p %p\n",arg.v.gc,_arg->v.gc);
         runtime = new Runtime(ang,"<thread>");
         id = runtime->id;
         runtime->thread = this;
-        runtime->pushval()->copy(arg);
-        //        printf("Creating thread at %p/%s\n",this,func.t->name);
+        runtime->pushval()->copy(&arg);
         pthread_create(&thread,NULL,_threadfunc,this);
+//        printf("Created thread %d[%lu] at %p/%s runtime at %p\n",id,thread,this,func.t->name,runtime);
     }
     ~Thread(){
-        //        printf("Thread destroyed at %p\n",this);
+        if(runtime)throw WTF;
+//        printf("Thread %d destroyed at %p\n",id,this);
     }
     void run(){
-        const StringBuffer& buf = func.toString();
         try {
             runtime->runValue(&func);
         } catch(Exception e){
@@ -169,16 +173,21 @@ public:
             hook.globalUnlock();
         }
         hook.globalLock();
-        // pop the last value off the thread runtime
-        // and copy it into the return value, if there is one.
+       // pop the last value off the thread runtime
+       // and copy it into the return value, if there is one.
         if(!runtime->stack.isempty()){
             retval.copy(runtime->stack.popptr());
         }
+//        printf("Deleting runtime of thread %d at %p\n",id,runtime);
         delete runtime;
+//        printf("Deleting OK\n");
         runtime = NULL;
         // decrement refct, and delete this if it's zero. This is kind
         // of OK, here - it's the last thing that happens.
-        if(decRefCt())delete this; 
+        if(decRefCt()){
+            delete this; 
+        }
+        func.clr();
         hook.globalUnlock();
     }
 };
@@ -378,14 +387,22 @@ Wait for a message to arrive on this thread and return it.
     a->pushval()->copy(&v);
 }
 
-%word cur (-- thread) return current thread
+%word cur (-- thread|none) return current thread or none for main thread
 {
-    tThread.set(a->pushval(),a->thread);
+    if(a->thread)
+        tThread.set(a->pushval(),a->thread);
+    else
+        a->pushNone();
 }
 
-%wordargs id A|thread (thread -- id) get ID from thread
+%wordargs id v|thread (none|thread -- id) get ID from thread, -1 for none
 {
-    a->pushInt(p0->id);
+    if(p0->isNone())
+        a->pushNone();
+    else {
+        Thread *t = tThread.get(p0);
+        a->pushInt(t->id);
+    }
 }
 
 
