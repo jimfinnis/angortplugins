@@ -253,9 +253,9 @@ due to zero references.
 }
 
 static FILE *getf(Value *p,bool out){
-    if(p->isNone())
+    if(p->isNone()){
         return out?stdout:stdin;
-    else
+    } else
         return tFile.getf(p);
 }
 
@@ -546,7 +546,6 @@ static void doreadlist(FILE *f,Value *res){
 }
 static void doreadhash(FILE *f,Value *res){
     Hash *h = Types::tHash->set(res);
-    
     int32_t n;
     int rv = fread(&n,sizeof(n),1,f);
     try {
@@ -566,18 +565,20 @@ static void doreadhash(FILE *f,Value *res){
 %word readlist (fileobj/none -- list) read a binary list (as written by 'write')
 Read a list written by "write", returning the list.
 {
-    Value *p;
+    Value *p,v;
     a->popParams(&p,"A",&tFile);
     FILE *f = getf(p,false);
-    doreadlist(f,a->pushval());
+    doreadlist(f,&v);
+    a->pushval()->copy(&v);
 }
 %word readhash (fileobj/none -- hash) read a binary hash (as written by 'write')
 Read a hash written by "write", returning the list.
 {
-    Value *p;
+    Value *p,v;
     a->popParams(&p,"A",&tFile);
     FILE *f = getf(p,false);
-    doreadhash(f,a->pushval());
+    doreadhash(f,&v);
+    a->pushval()->copy(&v);
 }
 
 %wordargs isdir s (path -- boolean/none) is the path a directory? None indicates doesn't exist.

@@ -2,7 +2,7 @@
 
 package mpcc
 
-[`curl,`time,`regex, `sys,`mpd,`id3,`io] each { i library drop}
+[`thread,`curl,`time,`regex, `sys,`mpd,`id3,`io] each { i library drop}
 require "ansiterm.ang" drop
 `future nspace [`slice] import
 
@@ -13,6 +13,10 @@ require "ansiterm.ang" drop
 20 !ListWindow
 
 private
+
+thread$mutex !Lock
+:lock  ?Lock thread$lock;
+:unlock  ?Lock thread$unlock;
 
 :showbool |b/integer,s/string:|
     ?s std$p " " std$p ?b if "ON " else "OFF" then std$p
@@ -47,15 +51,19 @@ private
 ;
 
 :dosearch |tag,str:|
+    lock
     :"(tag str -- list) non exact search shortcut"
     [% ?tag ?str] 0 mpd$search
+    unlock
     # add the toString tag
     dup each{i addstrconv};
 
 # show a list of songs in the playlist
 :showlist |startidx,endidx:list,titlen,artlen,stat,i|
+    lock
     mpd$list !list
     mpd$stat !stat
+    unlock
     `blue ansiterm$setfc std$p
     "List length: " std$p ?list len.
     
@@ -136,13 +144,17 @@ private
 public
 
 :rep |:t|
+    lock
     mpd$stat?`repeat not dup
     mpd$setrepeat
+    unlock
     "Repeat is now" showbool nl
 ;
 :rnd |:t|
+    lock
     mpd$stat?`random not dup
     mpd$setrandom
+    unlock
     "Random is now" showbool nl
 ;
 
@@ -154,8 +166,10 @@ public
 ;
         
 :getlist
+    lock
     :"(-- list) get the current playlist"
-    mpd$list dup each{i addstrconv};
+    mpd$list dup each{i addstrconv}
+    unlock;
 
 
 :artist |name:|
@@ -176,19 +190,22 @@ public
 
 :m
     :"(cmd --) run an mpd$mpc command and list the output"
-    mpd$mpc each {i.};
+    lock
+    mpd$mpc 
+    unlock each {i.};
 
 global p # force a new definition in this namespace
 :p
     :"(--) start playing"
-    none mpd$play;
+    lock
+    none mpd$play unlock;
 :s
     :"(--) stop playing"
-    mpd$stop;
+    lock mpd$stop unlock;
 
 :ps
     :"(--) pause"
-    mpd$pause;
+    lock mpd$pause unlock;
 
 
     
@@ -204,7 +221,9 @@ global list # force a new definition in this namespace
 :l
     :"((n) --) list playlist. If stackct>1, show around that number, else show current"
     ct 0 = if
+        lock
         mpd$stat ?`pos list
+        unlock
     else
         list
     then
@@ -219,7 +238,9 @@ global list # force a new definition in this namespace
     :"(-- hash) get current playing song"
     mpd$stat?`pos !p
     ?p 0 < not if
+        lock
         ?p getlist get
+        unlock
     else
         none
     then
@@ -227,9 +248,10 @@ global list # force a new definition in this namespace
 
 :stat |:stat,list|
     :"(--) show current status"
+    lock
     mpd$stat !stat
     mpd$list !list # don't need to decorate with a toString member
-    
+    unlock
     "State : " ?stat?`state +
     "  Volume : " ?stat?`volume + +.
     ?stat?`pos 0 < not if
@@ -257,6 +279,7 @@ global list # force a new definition in this namespace
 # are commented out.
 :longprompt |g,s,c:t,list,song,stat|
     try
+        lock
         mpd$stat !stat
         #stat chars
         ""
@@ -272,7 +295,7 @@ global list # force a new definition in this namespace
         ?t isnone if "?" else ?t then + 
         " " +
         # list position
-#        `green ansiterm$setfbc wrapseq +
+        #        `green ansiterm$setfbc wrapseq +
         mpd$list !list
         ?stat?`pos + "/" + ?list len + " " +
         ?stat?`state `play = ?stat?`state `pause = or if
@@ -282,6 +305,7 @@ global list # force a new definition in this namespace
             ?song?`artist chknone 20 trunc + 
         then
         "|   "+
+        unlock
 
     catch: ex$failed,ex$notready
         clear "ERR"
@@ -294,12 +318,12 @@ global list # force a new definition in this namespace
 ?longprompt cli$prompt
 
 
-:v mpd$setvol;
+:v lock mpd$setvol unlock;
 
 :clr :"(--) clear the playlist"
-    mpd$clr;
+    lock mpd$clr unlock;
 :add :"(list --) add a list of songs to the  playlist"
-    mpd$add;
+    lock mpd$add unlock;
 
 :dmp |x:|
     :"(lst --) dump a list or hash"
@@ -311,19 +335,19 @@ global list # force a new definition in this namespace
     
 :d 
     :"(n --) delete item in current playlist"
-    mpd$del;
+    lock mpd$del unlock;
 
 :f 
     :"(--) move forwards in current playlist"
-    mpd$next;
+    lock mpd$next unlock;
 
 :b 
     :"(--) move backwards in current playlist"
-    mpd$prev;
+    lock mpd$prev unlock;
 
 :g |x:|
     :"(n --) start playing from given song index in playlist"
-    ?x mpd$play;
+    lock ?x mpd$play unlock;
 
 :shuf |lst:n,a,l|
     :"(list -- list) shuffle a list"
@@ -339,18 +363,20 @@ global list # force a new definition in this namespace
 
 :rm
     :"(name --) delete a playlist"
-    mpd$rm;
+    lock mpd$rm unlock;
 
 :ls
     :"(--) list all stored playlists"
-    mpd$playlists each {i.};
+    lock mpd$playlists each {i.} unlock;
 
 :allsongs |:ids|
     :"(--list) list all songs (takes ages)"
     []
+    lock
     `artist [%] mpd$tags each {i.
         [% `artist i] 1 mpd$search each{i dup addstrconv, }
     }
+    unlock
 ;
 
     
@@ -401,8 +427,10 @@ global list # force a new definition in this namespace
 :savefile |n:f|
     :"(n --) save queue to local file (preserves play position)"
     ?n "w" io$open !f
+    lock
     mpd$stat ?`pos ?f io$write
     mpd$list ?f io$write
+    unlock
 ;
 
 :addfile |n:f,p,l|
@@ -413,7 +441,9 @@ global list # force a new definition in this namespace
     "Playlist position: " std$p ?p .
     ?f io$readlist !l
     "Adding " std$p ?l len std$p " items.".
+    lock
     ?l mpd$add
+    unlock
     # don't seek, play number will be wrong
 ;
     
@@ -428,8 +458,10 @@ global list # force a new definition in this namespace
     "Playlist position: " std$p ?p .
     ?f io$readlist !l
     "Adding " std$p ?l len std$p " items.".
+    lock
     ?l mpd$add
     ?p 0 mpd$seek
+    unlock
 ;
 
 :sv
@@ -469,8 +501,8 @@ global list # force a new definition in this namespace
      `name ?n,
      `album "Radio",
      `title ?n
-     ]
-    mpd$add
+ ]
+ lock  mpd$add unlock
 ;
 
 # this works OK for radio 3!
@@ -558,6 +590,15 @@ global list # force a new definition in this namespace
     clr "http://208.113.132.162:8000/wibblings"
     addmp3 p
 ;
+
+
+# start a thread to keep pinging the server with status checks,
+# keeping the connection alive.
+none (
+    {1 time$delay
+        lock mpd$stat drop unlock
+    }
+) thread$create drop
 
 endpackage import
 

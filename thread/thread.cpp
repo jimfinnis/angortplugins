@@ -411,12 +411,9 @@ Wait for a message to arrive on this thread and return it.
     fprintf(stderr,"Initialising THREAD plugin, %s %s\n",__DATE__,__TIME__);
     
     fprintf(stderr,
-            "Todo: \n"
-            "-make sure threads die correctly on end of function,\n"
-            "-signal handling in both Angort and here\n"
-            "-thread kill and join (list of threads)\n"
-            "-thread data stored in Runtime so we can get thread\n"
-            "-finer grained lock object\n"
+            "DO NOT USE THIS to do ANYTHING with collections - \n"
+            "arraylists and hashes move around in memory and this will\n"
+            "royally mess things up. Sorry.\n"
             );
     Angort::setThreadHookObject(&hook);
 }    
