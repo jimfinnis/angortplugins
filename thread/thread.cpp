@@ -147,6 +147,7 @@ public:
         return runtime != NULL;
     }
     Thread(Angort *ang,Value *v,Value *arg) : GarbageCollected(){
+        hook.globalLock();
         incRefCt(); // make sure we don't get deleted until complete
         func.copy(v);
         runtime = new Runtime(ang,"<thread>");
@@ -155,6 +156,7 @@ public:
         runtime->pushval()->copy(arg);
         //        printf("Creating thread at %p/%s\n",this,func.t->name);
         pthread_create(&thread,NULL,_threadfunc,this);
+        hook.globalUnlock();
     }
     ~Thread(){
         //        printf("Thread destroyed at %p\n",this);

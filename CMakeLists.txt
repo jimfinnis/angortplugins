@@ -5,7 +5,9 @@ include("cmake/macros.cmake")
 
 set(INSTALLDIR "/usr/local/share/angort")
 
-add_definitions(-pthread)
+set(CMAKE_CXX_FLAGS "-pthread")
+set(CMAKE_C_FLAGS "-pthread")
+set(CMAKE_EXE_LINKER_FLAGS,"-pthread")
 
 #####################################################################
 #
