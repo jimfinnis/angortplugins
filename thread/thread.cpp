@@ -416,5 +416,10 @@ Wait for a message to arrive on this thread and return it.
             "royally mess things up. Sorry.\n"
             );
     Angort::setThreadHookObject(&hook);
+    
+    if(!angort::hasLocking()){
+        fprintf(stderr,"Cannot use the thread library - Angort was not compiled with locking.\n");
+        exit(1);
+    }
 }    
 

@@ -206,6 +206,12 @@ static void dowrite(FILE *f,Value *v,bool inContainer=false){
     } else if(v->t == Types::tFloat) {
         float i = (float)v->toFloat();
         fwrite(&i,sizeof(i),1,f);
+    } else if(v->t == Types::tDouble) {
+        double i = (double)v->toDouble();
+        fwrite(&i,sizeof(i),1,f);
+    } else if(v->t == Types::tLong){ // make sure 64 bit.
+        int64_t i = (int64_t)v->toLong();
+        fwrite(&i,sizeof(i),1,f);
     } else if(v->t == Types::tString || v->t == Types::tSymbol) {
         const StringBuffer &sb = v->toString();
         int len = strlen(sb.get());
@@ -516,6 +522,14 @@ static bool readval(FILE *f,Value *res){
     } else if(typeID == Types::tFloat->id) {
         rv=fread(&fl,sizeof(fl),1,f);
         Types::tFloat->set(res,fl);
+    } else if(typeID == Types::tLong->id) {
+        int64_t qq;
+        rv=fread(&qq,sizeof(qq),1,f);
+        Types::tLong->set(res,qq);
+    } else if(typeID == Types::tDouble->id) {
+        double qq;
+        rv=fread(&qq,sizeof(qq),1,f);
+        Types::tDouble->set(res,qq);
     } else if(typeID == Types::tString->id) {
         const char *s = readstr(f);
         Types::tString->set(res,s);
