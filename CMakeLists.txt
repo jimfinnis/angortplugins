@@ -5,8 +5,6 @@ include("cmake/macros.cmake")
 
 set(INSTALLDIR "/usr/local/share/angort")
 
-add_definitions(-pthread)
-
 #####################################################################
 #
 # add the projects down here

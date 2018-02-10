@@ -10,33 +10,6 @@
 
 using namespace angort;
 
-// thread hook object Angort uses to do... stuff.
-
-class MyThreadHookObject : public ThreadHookObject {
-    // a big global lock
-    pthread_mutex_t mutex;
-public:
-    MyThreadHookObject(){
-        pthread_mutexattr_t attr;
-        pthread_mutexattr_init(&attr);
-        pthread_mutexattr_settype(&attr,PTHREAD_MUTEX_RECURSIVE);
-        pthread_mutex_init(&mutex,&attr);
-    }
-    ~MyThreadHookObject(){
-        pthread_mutex_destroy(&mutex);
-    }
-    
-    // single global mutex, nestable
-    virtual void globalLock(){
-        pthread_mutex_lock(&mutex);
-    }
-    virtual void globalUnlock(){
-        pthread_mutex_unlock(&mutex);
-    }
-};
-
-static MyThreadHookObject hook;
-
 class MsgBuffer {
     static const int size=8;
     Value msgs[size];
@@ -168,27 +141,28 @@ public:
         try {
             runtime->runValue(&func);
         } catch(Exception e){
-            hook.globalLock();
+            WriteLock lock(&globalLock);
             printf("Exception in thread %d\n",runtime->id);
-            hook.globalUnlock();
         }
-        hook.globalLock();
-       // pop the last value off the thread runtime
-       // and copy it into the return value, if there is one.
-        if(!runtime->stack.isempty()){
-            retval.copy(runtime->stack.popptr());
+        
+        {
+            WriteLock lock(&globalLock);
+            // pop the last value off the thread runtime
+            // and copy it into the return value, if there is one.
+            if(!runtime->stack.isempty()){
+                retval.copy(runtime->stack.popptr());
+            }
+            //        printf("Deleting runtime of thread %d at %p\n",id,runtime);
+            delete runtime;
+            //        printf("Deleting OK\n");
+            runtime = NULL;
+            // decrement refct, and delete this if it's zero. This is kind
+            // of OK, here - it's the last thing that happens.
+            if(decRefCt()){
+                delete this; 
+            }
+            func.clr();
         }
-//        printf("Deleting runtime of thread %d at %p\n",id,runtime);
-        delete runtime;
-//        printf("Deleting OK\n");
-        runtime = NULL;
-        // decrement refct, and delete this if it's zero. This is kind
-        // of OK, here - it's the last thing that happens.
-        if(decRefCt()){
-            delete this; 
-        }
-        func.clr();
-        hook.globalUnlock();
     }
 };
 }
@@ -226,24 +200,22 @@ public:
     
     // create a new thread!
     void set(Value *v,Angort *ang,Value *func,Value *pass){
+        WriteLock lock(&globalLock);
         if(func->t != Types::tCode)
-            throw RUNT(EX_TYPE,"not a codeblock (can't be a closure)");
-        hook.globalLock();
+            throw RUNT(EX_TYPE,"").set("not a codeblock, is %s (can't be a closure)",func->t->name);
         v->clr();
         v->t=this;
         v->v.gc = new Thread(ang,func,pass);
         incRef(v);
-        hook.globalUnlock();
     }
     
     // set a value to a thread
     void set(Value *v, Thread *t){
-        hook.globalLock();
+        WriteLock lock(&globalLock);
         v->clr();
         v->t = this;
         v->v.gc = t;
         incRef(v);
-        hook.globalUnlock();
     }
 };
 
@@ -280,16 +252,6 @@ static WrapperType<pthread_mutex_t> tMutex("MUTX");
     p.copy(p0);
     v.copy(p1);
     tThread.set(a->pushval(),a->ang,&v,&p);
-}
-
-%word glock (--) global lock
-{
-    hook.globalLock();
-}
-
-%word unglock (--) global unlock
-{
-    hook.globalUnlock();
 }
 
 %wordargs join l (threadlist --) wait for threads to complete
@@ -336,14 +298,12 @@ the function parameter, and receive the result (after the thread has
 completed) using thread$retval. If the thread is still running an
 exception will be thrown. Use thread$join to wait for thread completion.
 {
-    hook.globalLock();
+    WriteLock lock(&globalLock);
     if(p0->isRunning()){
-        hook.globalUnlock();
         throw RUNT("ex$threadrunning","thread is still running");
     }
     
     a->pushval()->copy(&p0->retval);
-    hook.globalUnlock();
 }
 
 %wordargs sendnoblock vv|thread (msg thread|none -- bool) send a message value to a thread
@@ -415,7 +375,6 @@ Wait for a message to arrive on this thread and return it.
             "arraylists and hashes move around in memory and this will\n"
             "royally mess things up. Sorry.\n"
             );
-    Angort::setThreadHookObject(&hook);
     
     if(!angort::hasLocking()){
         fprintf(stderr,"Cannot use the thread library - Angort was not compiled with locking.\n");

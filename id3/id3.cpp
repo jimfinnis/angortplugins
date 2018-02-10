@@ -24,12 +24,13 @@ inline void setTagStr(Hash *h,const char *k,TagLib::String str){
     h->setSymStr(k,str.toCString(true));
 }
 
-%word loadtags (fileName -- hash) load ID3 tags (also stores filename) in hash
+%word loadtags (fileName -- hash|none) load ID3 tags (also stores filename) in hash
 {
     Value *p;
     a->popParams(&p,"s");
-    
-    TagLib::FileRef f(p->toString().get());
+    char fn[1024];
+    strcpy(fn,p->toString().get());
+    TagLib::FileRef f(fn);
     
     p=a->pushval();
     
@@ -46,7 +47,7 @@ inline void setTagStr(Hash *h,const char *k,TagLib::String str){
         setTagStr(res,"genre",t->genre());
         res->setSymInt("year",t->year());
         res->setSymInt("track",t->track());
-        setTagStr(res,"filename",p->toString().get());
+        setTagStr(res,"filename",fn);
     }
 }
 
@@ -69,33 +70,22 @@ inline int getInt(Hash *hash,const char *name){
 }
     
 
-%word savetags (hash --) save ID3 tags as loaded by loadtags (filename is in hash)
+%wordargs savetags hs (hash --) save ID3 tags as loaded by loadtags
 {
-    Value *p;
-    a->popParams(&p,"h");
-    Hash *h = Types::tHash->get(p);
+    TagLib::FileRef f(p1);
+    TagLib::Tag *t = f.tag();
     
-    Value k;
-    Types::tString->set(&k,"filename");
-    if(h->find(&k)){
-        Value *v = h->getval();
-        TagLib::FileRef f(v->toString().get());
-        TagLib::Tag *t = f.tag();
+    t->setArtist(getStr(p0,"artist"));
+    t->setTitle(getStr(p0,"title"));
+    t->setAlbum(getStr(p0,"album"));
+    t->setComment(getStr(p0,"comment"));
+    t->setGenre(getStr(p0,"genre"));
     
-        t->setArtist(getStr(h,"artist"));
-        t->setTitle(getStr(h,"title"));
-        t->setAlbum(getStr(h,"album"));
-        t->setComment(getStr(h,"comment"));
-        t->setGenre(getStr(h,"genre"));
-    
-        t->setTrack(getInt(h,"track"));
-        t->setYear(getInt(h,"year"));
+    t->setTrack(getInt(p0,"track"));
+    t->setYear(getInt(p0,"year"));
         
-        if(!f.save())
-            printf("Warning: could not save to file %s",v->toString().get());
-    }
-    
-               
+    if(!f.save())
+        fprintf(stderr,"Warning: could not save to file %s\n",p1);
 }
 
 

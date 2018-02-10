@@ -36,6 +36,12 @@ macro(add name wordsfile)
 #    target_link_libraries(${name} -langort)
     set_property(TARGET ${name} PROPERTY POSITION_INDEPENDENT_CODE ON)
 
+    if(POSIXTHREADS)
+        message("POSIX threads enabled")
+        set_target_properties(${name} PROPERTIES COMPILE_DEFINITIONS ANGORT_POSIXLOCKS)
+        target_compile_options(${name} PUBLIC "-pthread")
+    endif(POSIXTHREADS)
+
     # the plugin dir name should also be in the include path
 
     target_include_directories(${name} PUBLIC ${name})
