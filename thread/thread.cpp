@@ -122,6 +122,7 @@ public:
         return runtime != NULL;
     }
     Thread(Angort *ang,Value *v,Value *_arg) : GarbageCollected(){
+        WriteLock lock=WL(&globalLock);
         incRefCt(); // make sure we don't get deleted until complete
         func.copy(v);
         _arg->t->clone(&arg,_arg); // clone the argument
@@ -130,6 +131,7 @@ public:
         id = runtime->id;
         runtime->thread = this;
         runtime->pushval()->copy(&arg);
+//            printf("Start of run refcount is %d\n",(int)refct);
         pthread_create(&thread,NULL,_threadfunc,this);
 //        printf("Created thread %d[%lu] at %p/%s runtime at %p\n",id,thread,this,func.t->name,runtime);
     }
@@ -141,12 +143,12 @@ public:
         try {
             runtime->runValue(&func);
         } catch(Exception e){
-            WriteLock lock(&globalLock);
+            WriteLock lock=WL(&globalLock);
             printf("Exception in thread %d\n",runtime->id);
         }
         
         {
-            WriteLock lock(&globalLock);
+            WriteLock lock=WL(&globalLock);
             // pop the last value off the thread runtime
             // and copy it into the return value, if there is one.
             if(!runtime->stack.isempty()){
@@ -156,12 +158,14 @@ public:
             delete runtime;
             //        printf("Deleting OK\n");
             runtime = NULL;
+            func.clr();
             // decrement refct, and delete this if it's zero. This is kind
             // of OK, here - it's the last thing that happens.
+//            printf("End of run refcount is %d\n",(int)refct);
             if(decRefCt()){
+                printf("Refcount delete at end of run()\n");
                 delete this; 
             }
-            func.clr();
         }
     }
 };
@@ -200,7 +204,6 @@ public:
     
     // create a new thread!
     void set(Value *v,Angort *ang,Value *func,Value *pass){
-        WriteLock lock(&globalLock);
         if(func->t != Types::tCode)
             throw RUNT(EX_TYPE,"").set("not a codeblock, is %s (can't be a closure)",func->t->name);
         v->clr();
@@ -211,7 +214,6 @@ public:
     
     // set a value to a thread
     void set(Value *v, Thread *t){
-        WriteLock lock(&globalLock);
         v->clr();
         v->t = this;
         v->v.gc = t;
@@ -257,7 +259,7 @@ static WrapperType<pthread_mutex_t> tMutex("MUTX");
 %wordargs join l (threadlist --) wait for threads to complete
 {
     ArrayListIterator<Value> iter(p0);
-    
+//    printf("JOIN START\n");
     // check types first
     for(iter.first();!iter.isDone();iter.next()){
         Value *p = iter.current();
@@ -270,6 +272,7 @@ static WrapperType<pthread_mutex_t> tMutex("MUTX");
         Value *p = iter.current();
         pthread_join(tThread.get(p)->thread,NULL);
     }
+//    printf("JOIN END\n");
 }
 
 %word mutex (-- mutex) create a recursive mutex
@@ -298,7 +301,7 @@ the function parameter, and receive the result (after the thread has
 completed) using thread$retval. If the thread is still running an
 exception will be thrown. Use thread$join to wait for thread completion.
 {
-    WriteLock lock(&globalLock);
+    WriteLock lock=WL(&globalLock);
     if(p0->isRunning()){
         throw RUNT("ex$threadrunning","thread is still running");
     }
@@ -375,7 +378,7 @@ Wait for a message to arrive on this thread and return it.
             "arraylists and hashes move around in memory and this will\n"
             "royally mess things up. Sorry.\n"
             );
-    
+    fprintf(stderr,"Thread type ID = %u\n",tThread.id);
     if(!angort::hasLocking()){
         fprintf(stderr,"Cannot use the thread library - Angort was not compiled with locking.\n");
         exit(1);
