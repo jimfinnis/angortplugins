@@ -249,6 +249,10 @@ static WrapperType<pthread_mutex_t> tMutex("MUTX");
 // words
 
 %wordargs create vc (arg func --) start a new thread
+Start a new thread, as a function which takes an argument. The
+argument is shallow-cloned before being pushed onto the thread function's
+stack. If the thread finishes with a non-empty stack, the top value can
+be retrieved with thread$retval. 
 {
     Value v,p;
     p.copy(p0);

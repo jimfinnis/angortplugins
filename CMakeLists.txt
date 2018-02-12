@@ -5,6 +5,7 @@ include("cmake/macros.cmake")
 
 set(INSTALLDIR "/usr/local/share/angort")
 
+
 #####################################################################
 #
 # add the projects down here
@@ -106,6 +107,7 @@ find_package(Threads)
 if(CMAKE_USE_PTHREADS_INIT)
 addeasy(thread)
 target_link_libraries(thread "${CMAKE_THREAD_LIBS_INIT}")
+target_compile_options(thread PUBLIC "-pthread")
 endif(CMAKE_USE_PTHREADS_INIT)
 
 
