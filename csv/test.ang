@@ -1,6 +1,7 @@
-"../libs/csv" library drop
-require "util.ang" drop
+"../build/csv" library drop
 
- [%  ] csv$make "foo.csv" csv$read
-each{i show.}
+[% `types "iissffffffffffffffffff" ] csv$make "foo.csv" csv$read
+
+# [`s,`b10,`func1name] 
+none csv$out
 quit

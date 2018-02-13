@@ -103,13 +103,14 @@ target_compile_options(id3 PUBLIC ${TAGLIB_CFLAGS})
 target_include_directories(id3 PUBLIC ${TAGLIB_INCLUDE_DIRS})
 endif(TAGLIB_FOUND)
 
+if(0)
 find_package(Threads)
 if(CMAKE_USE_PTHREADS_INIT)
 addeasy(thread)
 target_link_libraries(thread "${CMAKE_THREAD_LIBS_INIT}")
 target_compile_options(thread PUBLIC "-pthread")
 endif(CMAKE_USE_PTHREADS_INIT)
-
+endif()
 
 
 ##################################################################

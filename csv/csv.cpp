@@ -499,11 +499,34 @@ line.
     
 }
 
-%wordargs out l (csvhashlist --) output CSV to stdout
+%wordargs out lv (csvhashlist ordering --) output CSV to stdout.
+The input is the loaded csv hashlist (from csv$read) and an optional list
+of symbols giving the columns and order in which they should be printed.
+If "none" is given, all columns are printed in a random order.
 {
-    ArrayListIterator<Value> iter(p0);
     ArrayList<const char *> headers;
     
+    // get the ordering if present
+    if(p1->t != Types::tNone){
+        if(p1->t != Types::tList)
+            throw RUNT(EX_TYPE,"required a list for CSV output ordering");
+        ArrayList<Value> *olist = Types::tList->get(p1);
+        ArrayListIterator<Value> iter(olist);
+        int iidx=0;
+        for(iter.first();!iter.isDone();iter.next(),iidx++){
+            Value *v = iter.current();
+            if(v->t != Types::tSymbol)
+                throw RUNT(EX_TYPE,"required a list of symbols for CSV output ordering");
+            const StringBuffer& hks = v->toString();
+            fputs(hks.get(),a->outputStream);
+            fputc((iidx==olist->count()-1)?'\n':',',a->outputStream);
+            *(headers.append()) = strdup(hks.get());
+        }                
+    }
+    
+    
+    // iterate over all rows
+    ArrayListIterator<Value> iter(p0);
     for(iter.first();!iter.isDone();iter.next()){
         Value *v = iter.current();
         Hash *h = Types::tHash->get(v);
@@ -528,7 +551,7 @@ line.
                 fputs(vv->toString().get(),a->outputStream);
             }                
             else fputs("??",a->outputStream);
-            fputc((i==h->count()-1)?'\n':',',a->outputStream);
+            fputc((i==headers.count()-1)?'\n':',',a->outputStream);
         }
             
     }
