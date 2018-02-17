@@ -10,7 +10,11 @@
 
 
 
-// use this for structures which require allocating and deallocating
+// use this for structures which require allocating and deallocating.
+// Don't use if the internals can store Values, because then you
+// have to write wipeContents() - see array/array.cpp for details
+// of a fully written type without wrappers, which does this.
+
 template <class T> struct Wrapper : angort::GarbageCollected {
     T *base;
     Wrapper(T *p) : angort::GarbageCollected() {

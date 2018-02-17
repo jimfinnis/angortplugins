@@ -15,7 +15,6 @@
 #include <errno.h>
 
 #include <angort/angort.h>
-#include "../wrappers.h"
 
 using namespace angort;
 
@@ -26,7 +25,7 @@ enum CoordMode {
 };
 
 
-struct Array {
+struct Array : public GarbageCollected {
     int ndims; // how many dimensions has the array?
     int *dims; // size of each dimension
     int size; // number of elements
@@ -44,6 +43,12 @@ struct Array {
             size *= dims[i];
         }
         data = new Value[size];
+    }
+    
+    virtual void wipeContents(){
+        for(int i=0;i<size;i++){
+            data[i].wipeIfInGCCycle();
+        }
     }
     
     ~Array(){
@@ -81,13 +86,30 @@ struct Array {
     }
 };
 
-class ArrayType : public WrapperType<Array> {
+class ArrayType : public GCType {
 public:
-    ArrayType(const char *s) : WrapperType<Array>(s){}
+    ArrayType(){
+        add("array","ARRM");
+    }
+    
+    Array *get(Value *v){
+        if(!v)
+            throw RUNT(EX_TYPE,"").set("Expected %s, not a null object",name);
+        if(v->t!=this)
+            throw RUNT(EX_TYPE,"").set("Expected %s, not %s",name,v->t->name);
+        return (Array *)(v->v.gc);
+    }
+    
+    void set(Value *v,Array *a){
+        v->clr();
+        v->t=this;
+        v->v.gc = a;
+        incRef(v);
+    }
     virtual void clone(Value *out,const Value *in,bool deep=false)const;
 };
 
-static ArrayType tArray("ARRM");
+static ArrayType tArray;
 
 void ArrayType::clone(Value *out,const Value *in,bool deep)const{
     const Array *old = tArray.get((Value *)in);
@@ -99,8 +121,8 @@ void ArrayType::clone(Value *out,const Value *in,bool deep)const{
             v->t->clone(nv,v,true);
         else
             nv->copy(v);
-            
     }
+    tArray.set(out,na);
 }
 
 
