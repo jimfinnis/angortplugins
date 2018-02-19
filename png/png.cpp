@@ -15,16 +15,16 @@
 
 #include <angort/angort.h>
 #include <angort/hash.h>
+#include <angort/wrappers.h>
 
 using namespace angort;
 
-#include "../wrappers.h"
 
 struct Image : GarbageCollected {
     uint32_t **rows;
     int width,height;
 public:
-    Image(int w,int h){
+    Image(int w,int h) : GarbageCollected("img"){
         width=w;
         height=h;
         

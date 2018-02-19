@@ -109,11 +109,6 @@ endif(TAGLIB_FOUND)
 if(POSIXTHREADS)
     message("POSIX threads enabled")
     find_package(Threads)
-    if(CMAKE_USE_PTHREADS_INIT)
-    addeasy(thread)
-    target_link_libraries(thread "${CMAKE_THREAD_LIBS_INIT}")
-    set_property(TARGET thread APPEND PROPERTY COMPILE_DEFINITIONS ANGORT_POSIXLOCKS)
-    endif(CMAKE_USE_PTHREADS_INIT)
 endif()
 
 

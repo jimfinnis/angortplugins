@@ -6,8 +6,8 @@
 
 #include <math.h>
 #include <angort/angort.h>
+#include <angort/wrappers.h>
 #include "../hashgets.h"
-#include "../wrappers.h"
 #include "perlin.h"
 
 using namespace angort;

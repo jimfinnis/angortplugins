@@ -4,8 +4,8 @@
  *
  */
 
-#include "angort/angort.h"
-#include "../wrappers.h"
+#include <angort/angort.h>
+#include <angort/wrappers.h>
 #include <lo/lo.h>
 #define THROWOSC(e) throw RUNT("ex$diamond",e.what())
 
