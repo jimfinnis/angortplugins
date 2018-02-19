@@ -33,7 +33,7 @@ struct Array : public GarbageCollected {
     Value none;
     CoordMode cm; // how to deal with out-of-range
     
-    Array(int nd,int *d){
+    Array(int nd,int *d) {
         ndims = nd;
         cm = COORD_ERROR;
         size = 1;
