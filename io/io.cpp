@@ -481,16 +481,25 @@ the result.
     free((char *)s);
 }
 
-%word readfilestr (fileobj/none -- str) read an entire text file
-Read an entire text file into a string.
+%word readfilestr (fileobj/none/string -- str) read an entire text file
+Read an entire text file into a string. The file can be none (for stdin),
+a file object, or a string path.
 {
     Value *p;
-    a->popParams(&p,"A",&tFile);
+    FILE *f;
+    bool doclose=false;
     
-    FILE *f = getf(p,false);
+    a->popParams(&p,"v",&tFile);
+    if(p->t == Types::tString){
+        f = fopen(p->toString().get(),"r");
+        doclose = true;
+    } else 
+        f = getf(p,false);
+    
     const char *s = readstr(f,false);
     a->pushString(s);
     free((char *)s);
+    if(doclose)fclose(f);
 }
 
 %word eof (fileobj/none -- boolean) indicates if EOF has been read

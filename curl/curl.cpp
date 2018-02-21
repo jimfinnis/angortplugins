@@ -146,10 +146,14 @@ inline Value *hgetsym(Hash *h,const char *s){
     CurlWrapper *p0 = tCurl.get(a->stack.peekptr());
     CURL *c = p0->c;
     
-    if(const char *url = hgetstrdef(p1,"url",NULL))
-        curl_easy_setopt(c,CURLOPT_URL,url);
-    if(const char *post = hgetstrdef(p1,"postfields",NULL))
-        curl_easy_setopt(c,CURLOPT_COPYPOSTFIELDS,post);
+    if(const char *s = hgetstrdef(p1,"url",NULL))
+        curl_easy_setopt(c,CURLOPT_URL,s);
+    if(const char *s = hgetstrdef(p1,"postfields",NULL))
+        curl_easy_setopt(c,CURLOPT_COPYPOSTFIELDS,s);
+    if(const char *s = hgetstrdef(p1,"agent",NULL))
+        curl_easy_setopt(c,CURLOPT_USERAGENT,s);
+    if(const char *s = hgetstrdef(p1,"referer",NULL))
+        curl_easy_setopt(c,CURLOPT_REFERER,s);
 }
 
 %wordargs args h (hash -- string) turn a hash into an arg string
