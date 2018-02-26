@@ -1,8 +1,11 @@
 #!/usr/local/bin/angort
 
+1 !Threads
+
 package mpcc
 
-[`thread,`curl,`time,`regex, `sys,`mpd,`id3,`io] each { i library drop}
+[`curl,`time,`regex, `sys,`mpd,`id3,`io] each { i library drop}
+
 require "ansiterm.ang" drop
 `future nspace [`slice] import
 
@@ -14,9 +17,14 @@ require "ansiterm.ang" drop
 
 private
 
-thread$mutex !Lock
-:lock  ?Lock thread$lock;
-:unlock  ?Lock thread$unlock;
+?Threads compileif
+    thread$mutex !Lock
+    :lock  ?Lock thread$lock;
+    :unlock  ?Lock thread$unlock;
+elsecompileif
+    :lock ;
+    :unlock ;
+endcompileif
 
 :showbool |b/integer,s/string:|
     ?s std$p " " std$p ?b if "ON " else "OFF" then std$p
@@ -594,16 +602,21 @@ global list # force a new definition in this namespace
 
 # start a thread to keep pinging the server with status checks,
 # keeping the connection alive.
-none (
-    {1 time$delay
-        lock mpd$stat drop unlock
-    }
-) thread$create drop
 
+?Threads compileif
+    none (
+        {1 time$delay
+            lock mpd$stat drop unlock
+        }
+    ) thread$create drop
+endcompileif
+    
 endpackage import
 
-# and connect. If the env var is none, we'll pass that as 
+# and connect. If the env var is not none, we'll pass that as 
 # the host to mpd$connect and it will connect to localhost
 
-"MPDHOST" getenv 0 mpd$connect
+"MPDHOST" getenv !H
+?H isnone if "localhost" !H then
+?H 0 mpd$connect
 

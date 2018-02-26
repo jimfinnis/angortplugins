@@ -109,7 +109,7 @@ void makeSong(Value *out, const mpd_song *song){
 {
     Value *params[2];
     
-    a->popParams(params,"An",Types::tString);
+    a->popParams(params,"an",Types::tString);
     
     if(conn.mpd)
         conn.disconnect();
@@ -300,7 +300,7 @@ void sendAddOfNameInHash(Value *v){
 %word play (posOrNone --) start playing from a position, or from the current position
 {
     Value *p;
-    a->popParams(&p,"A",Types::tInteger);
+    a->popParams(&p,"a",Types::tInteger);
     
     conn.check();
     if(p->isNone()) {
