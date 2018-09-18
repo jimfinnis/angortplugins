@@ -2,6 +2,22 @@
 The plugins are built with a new CMake build system, where a single
 CMakeLists.txt builds all the plugins. For each one, it will
 check library dependencies (Curl, SDL, JACK etc).
+
+Extra dependencies are (Ubuntu packages are given)
+
+* id3:  libtag1-dev
+* mpd:  libmpdclient-dev
+* osc:  liblo-dev
+* diamond: Diamond Apparatus (available from my Github repos)
+* sdl:  libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev libsdl2-gfx-dev
+* midi: libjack-jackd2-dev jac
+    
+
+    
+    
+    
+    
+
 Just do
 
     mkdir build

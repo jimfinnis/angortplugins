@@ -1,6 +1,6 @@
 #!/usr/local/bin/angort
 
-1 !Threads
+0 !Threads
 
 package mpcc
 
@@ -72,11 +72,12 @@ endcompileif
     mpd$list !list
     mpd$stat !stat
     unlock
+    [?startidx,?endidx] " to " intercalate.
     `blue ansiterm$setfc std$p
     "List length: " std$p ?list len.
     
     # get the bit of the list we want
-    ?list ?startidx ?endidx ?startidx- 
+    ?list ?startidx ?endidx 
     slice !list
     
     # work out some max lengths
@@ -600,6 +601,7 @@ global list # force a new definition in this namespace
 ;
 
 
+
 # start a thread to keep pinging the server with status checks,
 # keeping the connection alive.
 
@@ -616,7 +618,8 @@ endpackage import
 # and connect. If the env var is not none, we'll pass that as 
 # the host to mpd$connect and it will connect to localhost
 
-"MPDHOST" getenv !H
-?H isnone if "localhost" !H then
-?H 0 mpd$connect
+"MPDHOST" getenv !Host
+?Host isnone if "localhost" !Host then
+"Connecting to " std$p ?Host.
+?Host 0 mpd$connect
 
