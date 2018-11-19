@@ -16,7 +16,7 @@ macro(add name wordsfile)
     add_custom_command(
         OUTPUT ${wordsfile}.cpp
         DEPENDS ${name}/${wordsfile}
-        COMMAND perl /home/white/angort/makeWords.pl ${CMAKE_SOURCE_DIR}/${name}/${wordsfile} > ${wordsfile}.cpp
+        COMMAND perl ${MAKEWORDS} ${CMAKE_SOURCE_DIR}/${name}/${wordsfile} > ${wordsfile}.cpp
     )
     
     # start the source list with that file.
