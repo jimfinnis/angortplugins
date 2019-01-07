@@ -3,6 +3,15 @@ project(ANGORTPLUGINS)
 
 option(POSIXTHREADS "enable POSIX threading")
 
+find_file(MAKEWORDS makeWords.pl PATHS /usr/local/share/angort 
+    /usr/share/angort
+    $ENV{HOME}/angort
+    )
+if(MAKEWORDS)
+    message(STATUS "makeWords.pl found in ${MAKEWORDS}")
+else()
+    message(FATAL_ERROR "makeWords.pl cannot be located")
+endif()
 
 include("cmake/macros.cmake")
 
