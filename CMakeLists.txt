@@ -6,8 +6,8 @@ option(POSIXTHREADS "enable POSIX threading")
 
 include("cmake/macros.cmake")
 
-set(INSTALLDIR "/usr/local/share/angort")
-
+set(INSTALLDIR "$ENV{HOME}/.angort")
+include_directories("$ENV{HOME}/include")
 
 #####################################################################
 #
