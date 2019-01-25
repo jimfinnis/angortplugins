@@ -26,7 +26,7 @@ include_directories("$ENV{HOME}/include")
 
 
 
-addeasy(io sys array time csv regex serial noise)
+addeasy(io sys array time csv regex serial noise colours)
 
 add(example_complex complex.cpp)
 add(example_hello hello.cpp)
