@@ -9,6 +9,7 @@
 
 #include <cmath>
 #include <vector>
+#include <stdexcept>
 
 
 namespace CatmullRom {
@@ -114,10 +115,10 @@ public:
         // Must be between p1.x and p2.x.
         x -= px1;
         if(x<0)
-            throw "oops1";
+            throw std::range_error("Catmull-Rom evaluate before range");
         x /= px2-px1;
         if(x>1)
-            throw "oops2";
+            throw std::range_error("Catmull-Rom evaluate after range");
         // x is now 0-1, i.e. =t. Now we can calculate Y
         return py.eval(x);
     }
