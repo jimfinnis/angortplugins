@@ -4,7 +4,9 @@ project(ANGORTPLUGINS)
 option(POSIXTHREADS "enable POSIX threading")
 
 find_file(MAKEWORDS makeWords.pl PATHS /usr/local/share/angort 
-    /usr/share/angort)
+    /usr/share/angort
+    $ENV{HOME}/angort
+    )
 if(MAKEWORDS)
     message(STATUS "makeWords.pl found in ${MAKEWORDS}")
 else()
@@ -13,8 +15,8 @@ endif()
 
 include("cmake/macros.cmake")
 
-set(INSTALLDIR "/usr/local/share/angort")
-
+set(INSTALLDIR "$ENV{HOME}/.angort")
+include_directories("$ENV{HOME}/include")
 
 #####################################################################
 #
@@ -24,7 +26,7 @@ set(INSTALLDIR "/usr/local/share/angort")
 
 
 
-addeasy(io sys array time csv regex serial noise)
+addeasy(io sys array time csv regex serial noise colours catmullrom)
 
 add(example_complex complex.cpp)
 add(example_hello hello.cpp)

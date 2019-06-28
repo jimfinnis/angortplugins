@@ -138,7 +138,12 @@ with colour pair 1.
             else if(!strcasecmp(b.get(),"blink"))
                 attrs |= A_BLINK;
             else if(!strcasecmp(b.get(),"italic"))
+#if defined(A_ITALIC)
                 attrs |= A_ITALIC;
+#else
+            {
+            }
+#endif
             else
                 throw RUNT(EX_CORRUPT,"").set("bad attribute name: %s",b.get());
             
