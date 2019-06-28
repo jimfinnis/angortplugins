@@ -118,6 +118,15 @@ if(POSIXTHREADS)
     find_package(Threads)
 endif()
 
+pkg_search_module(YAML_CPP yaml-cpp)
+if(YAML_CPP_FOUND)
+addeasy(yaml)
+target_link_libraries(yaml ${YAML_CPP_LIBRARIES})
+target_compile_options(yaml PUBLIC ${YAML_CPP_CFLAGS})
+target_include_directories(yaml PUBLIC ${YAML_CPP_INCLUDE_DIRS})
+endif(YAML_CPP_FOUND)
+
+
 
 ##################################################################
 
