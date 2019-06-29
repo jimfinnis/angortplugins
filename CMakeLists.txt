@@ -51,7 +51,7 @@ endif(DIAMOND_LIBRARIES AND DIAMOND_INCLUDE_DIRS)
 find_library(PNG_LIBRARIES png)
 find_path(PNG_INCLUDE_DIRS png.h)
 if(PNG_LIBRARIES AND PNG_INCLUDE_DIRS)
-addeasy(png)
+add(png png.cpp nvbdflib-1.0/nvbdflib.c) # include the font library
 target_link_libraries(png ${PNG_LIBRARIES})
 target_include_directories(png PUBLIC ${PNG_INCLUDE_DIRS})
 endif(PNG_LIBRARIES AND PNG_INCLUDE_DIRS)

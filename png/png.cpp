@@ -12,6 +12,7 @@
 
 //#define PNG_DEBUG 3
 #include <png.h>
+#include "nvbdflib-1.0/nvbdflib.h"
 
 #include <angort/angort.h>
 #include <angort/hash.h>
@@ -66,18 +67,78 @@ public:
 };
 static ImageType tImage;
 
+
+
+struct Font : GarbageCollected {
+    BDF_FONT *font;
+public:
+    
+    Font(const char *fn) : GarbageCollected("fnt"){
+        FILE *a = fopen(fn,"r");
+        if(!a)
+            throw RUNT(EX_BADPARAM,"").set("Cannot open font file : %s",fn);
+        
+        font = bdfReadFile(a);
+        if(!font)
+            throw RUNT(EX_BADPARAM,"").set("Font file is not correct: %s",fn);
+        fclose(a);
+    }
+    ~Font(){
+        bdfFree(font);
+    }
+};
+
+class FontType : public GCType {
+public:
+    FontType(){
+        add("PNGF","PNGFont");
+    }
+    
+    Font *get(Value *v){
+        if(v->t!=this)
+            throw RUNT(EX_TYPE,"").set("Expected PNG Font, not %s",v->t->name);
+        return (Font *)(v->v.gc);
+    }
+    
+    void set(Value *v,const char *fn) {
+        v->clr();
+        v->t = this;
+        v->v.gc = new Font(fn);
+        incRef(v);
+    }
+};
+static FontType tFont;
+
 static BasicWrapperType<uint32_t> tCol("ICOL");
               
 %name png
 %shared
 
 %type img tImage Image
+%type font tFont Font
 %type col4 tCol uint32_t
+
+// current drawing colour
+static uint32_t curcol=0xffffffff;
+
+// need this so the callback knows where to write text;
+// it's set in the text draw word(s).
+static Image *currentImageForText;
+
+static void bdfCallback(int x,int y,int iswhite){
+    if(iswhite){
+        if(x>=0 && x<currentImageForText->width && 
+           y>=0 && y<currentImageForText->height){
+            *currentImageForText->pix(x,y) = curcol;
+        }
+    }
+}
 
 
 %init
 {
     fprintf(stderr,"Initialising PNG image plugin, %s %s\n",__DATE__,__TIME__);
+    bdfSetDrawingFunction(bdfCallback);
 }
 
 
@@ -137,8 +198,6 @@ static BasicWrapperType<uint32_t> tCol("ICOL");
 }
 
 
-static uint32_t curcol=0xffffffff;
-
 %wordargs mkcol l ([r,g,b,a] -- col) make colour from bytes
 {
     uint32_t r = p0->get(0)->toInt();
@@ -147,6 +206,11 @@ static uint32_t curcol=0xffffffff;
     uint32_t al = p0->get(3)->toInt();
     
     tCol.set(a->pushval(),(al<<24)+(b<<16)+(g<<8)+r);
+}
+
+%word getcol (-- col) get colour
+{
+    tCol.set(a->pushval(),curcol);
 }
 
 %wordargs col A|col4 (col --) set colour
@@ -158,7 +222,6 @@ static uint32_t curcol=0xffffffff;
 %wordargs set iiA|img (x y img --) set a pixel
 {
     if(p0>=0 && p0<p2->width && p1>=0 && p1<p2->height){
-        printf("BLART %x\n",curcol);
         *p2->pix(p0,p1) = curcol;
     }
 }
@@ -185,4 +248,18 @@ static uint32_t curcol=0xffffffff;
             *row++=curcol;
         }
     }
+}
+
+%wordargs loadfont s (filename -- font) Load a BDF font file
+{
+    Value v;
+    tFont.set(&v,p0);
+    a->pushval()->copy(&v);
+}
+
+%wordargs text siiAB|font,img (string x y font img --) draw a string using a BDF font
+{
+    bdfSetDrawingAreaSize(p4->width,p4->height);
+    currentImageForText=p4;
+    bdfPrintString(p3->font,p1,p2,const_cast<char *>(p0));
 }

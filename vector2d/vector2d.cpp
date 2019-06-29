@@ -133,6 +133,12 @@ static Vector2DType tV2;
     Types::tFloat->set(a->pushval(),v->mag());
 }
 
+%wordargs norm A|vec (v -- v) normalize
+{
+    tV2.set(a->pushval(),p0->normalize());
+}
+    
+
 %word xy (v -- x y) get xy coords onto stack
 {
     Value *p;

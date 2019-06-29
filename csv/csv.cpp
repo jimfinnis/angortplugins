@@ -496,8 +496,26 @@ line.
             Types::tString->set(v,p0->colNames[i]);
         }
     }
-    
 }
+
+class BoolProperty : public Property {
+public:
+    bool value;
+    BoolProperty(bool vv){
+        value = vv;
+    }
+    
+    virtual void postSet(){
+       value = v.toInt();
+    }
+    
+    virtual void preGet(){
+        Types::tInteger->set(&v,value?1:0);
+    }
+};
+
+BoolProperty outheaders(true);
+
 
 %wordargs out lv (csvhashlist ordering --) output CSV to stdout.
 The input is the loaded csv hashlist (from csv$read) and an optional list
@@ -518,8 +536,10 @@ If "none" is given, all columns are printed in a random order.
             if(v->t != Types::tSymbol)
                 throw RUNT(EX_TYPE,"required a list of symbols for CSV output ordering");
             const StringBuffer& hks = v->toString();
-            fputs(hks.get(),a->outputStream);
-            fputc((iidx==olist->count()-1)?'\n':',',a->outputStream);
+            if(outheaders.value){
+                fputs(hks.get(),a->outputStream);
+                fputc((iidx==olist->count()-1)?'\n':',',a->outputStream);
+            }
             *(headers.append()) = strdup(hks.get());
         }                
     }
@@ -538,9 +558,12 @@ If "none" is given, all columns are printed in a random order.
                 Value *hkv = hki.current();
                 const StringBuffer& hks = hkv->toString();
                 *(headers.append()) = strdup(hks.get());
-                fputs(hks.get(),a->outputStream);
-                iidx++;
-                fputc((iidx==h->count())?'\n':',',a->outputStream);
+                if(outheaders.value){
+                    fputs(hks.get(),a->outputStream);
+                    iidx++;
+                    fputc((iidx==h->count())?'\n':',',a->outputStream);
+                } else
+                    iidx++;
             }
         }
         
@@ -580,5 +603,7 @@ If "none" is given, all columns are printed in a random order.
 %init
 {
     fprintf(stderr,"Initialising CSV plugin, %s %s\n",__DATE__,__TIME__);
+    
+    a->ang->registerProperty("outheaders",&outheaders,"csv");
 }
 
