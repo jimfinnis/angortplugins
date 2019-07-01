@@ -27,9 +27,11 @@ class Regex : public GarbageCollected {
 public:
     regex_t *r;
     int errorcode; //zero or error code
-    Regex(const char *s){
+    Regex(const char *s,bool icase){
         r = new regex_t;
-        errorcode = regcomp(r,s,REG_EXTENDED); // no flags
+        int f = REG_EXTENDED;
+        if(icase) f|= REG_ICASE;
+        errorcode = regcomp(r,s,f);
     }
     virtual ~Regex(){
         regfree(r);
@@ -49,10 +51,10 @@ public:
         return (Regex *)(v->v.gc);
     }
     
-    Regex *set(Value *v,const char *s){
+    Regex *set(Value *v,const char *s,bool icase){
         v->clr();
         v->t=this;
-        Regex *r = new Regex(s); 
+        Regex *r = new Regex(s,icase); 
         v->v.gc = r;
         incRef(v);
         return r;
@@ -63,11 +65,10 @@ static RegexType tR;
 
 %type regex tR Regex
 
-%wordargs compile s (string -- compiled regex) compile a regex
-{
+void docompile(Runtime *a,const char *p0,bool icase){
     char *s = strdup(p0); // copy to avoid pushval overwrite
     Value *v = a->pushval();
-    Regex *r = tR.set(v,s);
+    Regex *r = tR.set(v,s,icase);
     free(s);
     
     
@@ -78,6 +79,17 @@ static RegexType tR;
         throw RUNT(EX_FAILED,"").set("regex compile error: %s",s);
     }
 }
+
+%wordargs compile s (string -- compiled regex) compile a regex
+{
+    docompile(a,p0,false);
+}
+
+%wordargs compileicase s (string -- compiled regex) compile a regex (case independent)
+{
+    docompile(a,p0,true);
+}
+
 
 %wordargs chk A|regex (regex -- none or string) error check
 {
