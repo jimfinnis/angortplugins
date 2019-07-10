@@ -1,0 +1,83 @@
+[`io,`sdl,`time,`regex] each {i library drop}
+
+none none sdl$fullscreenopen
+sdl$scrsize !W !H
+
+10 60 * !COUNTDOWNTIME
+1 !TIMEBETWEENWORDS
+
+(
+    
+    [] "/usr/share/dict/words" "r" io$open each {
+        i <<"^[a-z]+$" regex$compile>> 
+        regex$match len if i, then
+    } !Words
+)@
+
+"/home/white/.fonts/"
+"BebasNeue.otf" 
++ 200 sdl$openfont !Font
+160 !LINEHEIGHT
+4 !NUMWORDS
+
+"/home/white/.fonts/"
+"BebasNeue.otf" 
++ 300 sdl$openfont !ClockFont
+
+none srand
+
+:drawcentre |yoff,texture:w,h|
+    ?texture sdl$texsize !w !h
+    ?W ?w - 2 /    ?H ?h - 2 / ?yoff+
+    ?w ?h ?texture sdl$blit
+;    
+
+:write |t,f:|
+    0 ?t ?f sdl$maketext drawcentre
+;
+
+[0,0,0,255] !sdl$bcol
+[255,255,255,255] !sdl$col
+
+0 sdl$showmouse
+
+:randword rand ?Words len % ?Words get;
+
+0!Running
+(|:lst,y|
+    sdl$clear
+    ?Running if
+        0.1 time$delay
+        [255,255,255,255] !sdl$col
+        ?COUNTDOWNTIME
+        time$now ?Start - - toint !T
+        [?T 60 /, ?T 60 % ] "%02d:%02d" format
+        ?ClockFont write
+    else
+        ?TIMEBETWEENWORDS time$delay
+        [] 0 ?NUMWORDS range each {randword,} !lst
+        ?lst len 1- 0.5 * neg ?LINEHEIGHT * !y
+        ?lst each {
+            [rand 255 %, rand 255 %, rand 255 %, 255] !sdl$col
+            ?y i ?Font sdl$maketext drawcentre
+            ?y ?LINEHEIGHT + !y
+        }
+    then
+    sdl$flip
+) sdl$ondraw
+
+(
+    chr
+    <<[%
+       "q" (sdl$done),
+       " " (1!Running time$now !Start)
+       ]>> get@
+) sdl$onkeydown
+
+sdl$clear
+sdl$loop
+1 sdl$showmouse
+quit
+    
+
+    
