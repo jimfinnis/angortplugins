@@ -11,6 +11,7 @@
 #include <limits.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/errno.h>
 #include <angort/angort.h>
 
 using namespace angort;
@@ -86,14 +87,14 @@ connected to the stdin and stdout of that process.
         }
         args[p1->count()+1] = NULL;
         execv(p2,args);
-        exit(0);
     } else {
         char *p = NULL;
         int len=0;
         close(linkfromcmd[1]);
         close(linktocmd[0]);
-        write(linktocmd[1],p0,strlen(p0));
+        write(linktocmd[1],p0,strlen(p0)+1);
         close(linktocmd[1]);
+        wait(NULL); // wait for child
         while(1){
             int nbytes = read(linkfromcmd[0],foo,sizeof(foo));
             if(nbytes){
@@ -109,7 +110,6 @@ connected to the stdin and stdout of that process.
                 break;
             }
         }
-        wait(NULL);
         if(!p)
             a->pushString("");
         else {
@@ -122,7 +122,6 @@ connected to the stdin and stdout of that process.
     close(linktocmd[0]);
     close(linkfromcmd[1]);
     close(linktocmd[1]);
-                    
 }
         
 

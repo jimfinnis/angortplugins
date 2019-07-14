@@ -16,6 +16,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <libgen.h>
 #include <cstddef>
 
 #include <angort/angort.h>
@@ -762,6 +763,23 @@ Uses flock() to unlock the file for exclusive use by this process.
 {
     flock(p0,LOCK_UN);
 }
+
+%wordargs basename s (name -- base name) remove directory elements
+{
+    //posix version will modify path
+    char path[PATH_MAX+1];
+    strncpy(path,p0,PATH_MAX);
+    a->pushString(basename(path));
+}
+
+%wordargs dirname s (name -- directory name) get directory name (or ".")
+{
+    char path[PATH_MAX+1];
+    strncpy(path,p0,PATH_MAX);
+    a->pushString(dirname(path));
+}
+
+
 
 
 %init
