@@ -59,6 +59,23 @@ Perform execv(2) with a list of arguments, which are converted to strings.
     execv(p1,args);
 }
 
+static bool execpipedebug=false;
+
+%wordargs debug i (bool --) enable/disable execpipe debug
+{
+    execpipedebug=(p0!=0);
+}
+
+static void epdprintf(const char *s,...){
+    if(execpipedebug){
+        char buf[256];
+        va_list args;
+        va_start(args,s);
+        vsnprintf(buf,256,s,args);
+        printf("execpipe debug:  %s\n",buf);
+    }
+}
+
 %wordargs execpipe sls (input arglist path -- output)
 Pipe a string (possibly consisting of multiple lines) through a 
 program. Does this with two pipes - one into and one out of the process,
@@ -76,6 +93,8 @@ connected to the stdin and stdout of that process.
     if((pid = fork())==-1)
         throw RUNT(EX_FAILED,"cannot fork");
     if(!pid){
+        epdprintf("CHILD started");
+        // this is the CHILD
         dup2(linkfromcmd[1],STDOUT_FILENO);
         dup2(linktocmd[0],STDIN_FILENO);
         close(linkfromcmd[0]);
@@ -86,17 +105,23 @@ connected to the stdin and stdout of that process.
             args[i+1] = strdup(p1->get(i)->toString().get());
         }
         args[p1->count()+1] = NULL;
+        epdprintf("CHILD executing execv");
         execv(p2,args);
+        epdprintf("CHILD returned!");
+        exit(1);
+        
     } else {
+        // this is the PARENT
         char *p = NULL;
         int len=0;
+        epdprintf("PARENT running");
         close(linkfromcmd[1]);
         close(linktocmd[0]);
         write(linktocmd[1],p0,strlen(p0)+1);
         close(linktocmd[1]);
-        wait(NULL); // wait for child
         while(1){
             int nbytes = read(linkfromcmd[0],foo,sizeof(foo));
+            epdprintf("PARENT read %d",nbytes);
             if(nbytes){
                 int end=len;
                 len+=nbytes;
@@ -110,6 +135,10 @@ connected to the stdin and stdout of that process.
                 break;
             }
         }
+        epdprintf("PARENT done");
+        // reap
+        epdprintf("PARENT waiting");
+        wait(NULL);
         if(!p)
             a->pushString("");
         else {
