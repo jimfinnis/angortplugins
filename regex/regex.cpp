@@ -103,32 +103,46 @@ void docompile(Runtime *a,const char *p0,bool icase){
     }
 }
 
-%wordargs match sA|regex (str regex -- matchlist) match
-{
-    regmatch_t match;
+static void domatch(Runtime *a,const char *str,Regex *r,int nmatch){
+    regmatch_t *match = (regmatch_t*)alloca(sizeof(regmatch_t)*(nmatch+1));
     Value v;
     ArrayList<Value> *list = Types::tList->set(&v);
     int off=0;
     int flags = 0;
-    if(p1->errorcode){
-        int size = regerror(p1->errorcode,p1->r,NULL,0)+1;
+    if(r->errorcode){
+        int size = regerror(r->errorcode,r->r,NULL,0)+1;
         char *s = (char *)alloca(size);
-        regerror(p1->errorcode,p1->r,s,1024);
+        regerror(r->errorcode,r->r,s,1024);
         throw RUNT(EX_CORRUPT,"").set("bad regex in use: %s",s);
     }
     for(;;){
-        int rv = regexec(p1->r,p0+off,1,&match,flags);
+        int rv = regexec(r->r,str+off,nmatch,match,flags);
         if(rv == REG_NOMATCH)
             break;
-        flags=REG_NOTBOL;
-        Value *v = list->append();
-        ArrayList<Value> *pair = Types::tList->set(v);
-        Types::tInteger->set(pair->append(),match.rm_so+off);
-        Types::tInteger->set(pair->append(),(match.rm_eo-match.rm_so));
-        off += match.rm_eo;
+        int eei=0;
+        for(int i=0;i<nmatch;i++){
+            if(match[i].rm_so>=0){
+                Value *v = list->append();
+                ArrayList<Value> *pair = Types::tList->set(v);
+                Types::tInteger->set(pair->append(),match[i].rm_so+off);
+                Types::tInteger->set(pair->append(),(match[i].rm_eo-match[i].rm_so));
+                eei = match[i].rm_eo;
+            }
+        }
+        off += eei;
     }
     a->pushval()->copy(&v);
 }
+
+%wordargs match sA|regex (str regex -- matchlist) match
+{
+    domatch(a,p0,p1,1);
+}
+%wordargs nmatch sAi|regex (str regex -- matchlist) match with n subexpressions
+{
+    domatch(a,p0,p1,p2+1);
+}
+
 
 %wordargs repl ssA|regex (subject repl regex -- result)
 {
