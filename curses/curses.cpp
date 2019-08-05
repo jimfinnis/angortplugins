@@ -205,7 +205,8 @@ static int cursor=1;
 
 %init
 {
-    fprintf(stderr,"Initialising CURSES plugin, %s %s\n",__DATE__,__TIME__);
+    if(showinit)
+        fprintf(stderr,"Initialising CURSES plugin, %s %s\n",__DATE__,__TIME__);
 }    
 
 %shutdown

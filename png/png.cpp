@@ -137,7 +137,8 @@ static void bdfCallback(int x,int y,int iswhite){
 
 %init
 {
-    fprintf(stderr,"Initialising PNG image plugin, %s %s\n",__DATE__,__TIME__);
+    if(showinit)
+        fprintf(stderr,"Initialising PNG image plugin, %s %s\n",__DATE__,__TIME__);
     bdfSetDrawingFunction(bdfCallback);
 }
 

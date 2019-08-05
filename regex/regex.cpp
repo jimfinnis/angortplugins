@@ -234,5 +234,6 @@ static void domatch(Runtime *a,const char *str,Regex *r,int nmatch){
 
 %init
 {
-    fprintf(stderr,"Initialising REGEX plugin, %s %s\n",__DATE__,__TIME__);
+    if(showinit)
+        fprintf(stderr,"Initialising REGEX plugin, %s %s\n",__DATE__,__TIME__);
 }

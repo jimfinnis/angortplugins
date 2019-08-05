@@ -91,5 +91,6 @@ inline int getInt(Hash *hash,const char *name){
 
 %init
 {
-    fprintf(stderr,"Initialising ID3 plugin, %s %s\n",__DATE__,__TIME__);
+    if(showinit)
+        fprintf(stderr,"Initialising ID3 plugin, %s %s\n",__DATE__,__TIME__);
 }

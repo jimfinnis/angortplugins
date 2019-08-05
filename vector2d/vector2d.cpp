@@ -330,5 +330,6 @@ inline bool collide(Vector2D &w1, Vector2D& w2,double xc,double yc,double r){
 
 %init
 {
-    fprintf(stderr,"Initialising VECTOR2D plugin, %s %s\n",__DATE__,__TIME__);
+    if(showinit)
+        fprintf(stderr,"Initialising VECTOR2D plugin, %s %s\n",__DATE__,__TIME__);
 }

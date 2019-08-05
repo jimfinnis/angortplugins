@@ -169,6 +169,7 @@ static int exitcode=0;
 
 %init
 {
-    fprintf(stderr,"Initialising SYS plugin, %s %s\n",__DATE__,__TIME__);
+    if(showinit)
+        fprintf(stderr,"Initialising SYS plugin, %s %s\n",__DATE__,__TIME__);
 }
 

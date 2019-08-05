@@ -223,5 +223,6 @@ void ArrayType::clone(Value *out,const Value *in,bool deep)const{
 
 %init
 {
-    fprintf(stderr,"Initialising ARRAY plugin, %s %s\n",__DATE__,__TIME__);
+    if(showinit)
+        fprintf(stderr,"Initialising ARRAY plugin, %s %s\n",__DATE__,__TIME__);
 }    

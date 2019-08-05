@@ -44,7 +44,8 @@ using namespace angort;
 
 %init
 {
-   fprintf(stderr,"Initialising HELLO plugin, %s %s\n",__DATE__,__TIME__);
+    if(showinit)
+        fprintf(stderr,"Initialising HELLO plugin, %s %s\n",__DATE__,__TIME__);
 }    
 
 

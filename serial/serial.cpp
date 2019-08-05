@@ -275,5 +275,6 @@ static SerialBufferType tBuf;
     
 %init
 {
-    printf("Starting simple serial library\n");
+    if(showinit)
+        printf("Starting simple serial library\n");
 }

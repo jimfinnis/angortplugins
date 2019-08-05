@@ -187,5 +187,6 @@ void setUDPProperty(const char *name,float val){
 
 %init
 {
-    printf("UDP library initialised\n");
+    if(showinit)
+        printf("UDP library initialised\n");
 }

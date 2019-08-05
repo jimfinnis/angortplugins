@@ -784,5 +784,6 @@ Uses flock() to unlock the file for exclusive use by this process.
 
 %init
 {
-    fprintf(stderr,"Initialising IO plugin, %s %s\n",__DATE__,__TIME__);
+    if(showinit)
+        fprintf(stderr,"Initialising IO plugin, %s %s\n",__DATE__,__TIME__);
 }

@@ -49,7 +49,8 @@ static BasicWrapperType<lo_address> tLoAddr("LOAD");
 
 %init
 {
-    fprintf(stderr,"Initialising OSC plugin (send only), %s %s\n",__DATE__,__TIME__);
+    if(showinit)
+        fprintf(stderr,"Initialising OSC plugin (send only), %s %s\n",__DATE__,__TIME__);
 }
 
 

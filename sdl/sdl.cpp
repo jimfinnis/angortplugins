@@ -754,7 +754,8 @@ static void hat2xy(int code,int *x,int *y){
 
 %init
 {
-    fprintf(stderr,"Initialising SDL plugin, %s %s\n",__DATE__,__TIME__);
+    if(showinit)
+        fprintf(stderr,"Initialising SDL plugin, %s %s\n",__DATE__,__TIME__);
     
     a->ang->registerProperty("col",&forecol,"sdl");
     a->ang->registerProperty("bcol",&backcol,"sdl");

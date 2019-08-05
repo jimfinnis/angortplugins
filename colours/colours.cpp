@@ -16,7 +16,8 @@ using namespace angort;
 
 %init
 {
-    fprintf(stderr,"Initialising COLOURS plugin, %s %s\n",__DATE__,__TIME__);
+    if(showinit)
+        fprintf(stderr,"Initialising COLOURS plugin, %s %s\n",__DATE__,__TIME__);
 }    
 
 %wordargs hsva2rgba nnnn (h s v a -- r g b a) hsv floats in 0-1 to rgba colour

@@ -121,7 +121,8 @@ Wait for new data to be received on any topic to which I am subscribed.
 %init
 {
     try {
-        fprintf(stderr,"Initialising DIAMOND plugin, %s %s\n",__DATE__,__TIME__);
+        if(showinit)
+            fprintf(stderr,"Initialising DIAMOND plugin, %s %s\n",__DATE__,__TIME__);
         diamondapparatus::init();
     } catch(diamondapparatus::DiamondException d){
         THROWDIAMOND(d);

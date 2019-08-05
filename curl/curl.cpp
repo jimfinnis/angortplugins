@@ -126,7 +126,8 @@ inline Value *hgetsym(Hash *h,const char *s){
 
 %init
 {
-    fprintf(stderr,"Initialising CURL plugin, %s %s\n",__DATE__,__TIME__);
+    if(showinit)
+        fprintf(stderr,"Initialising CURL plugin, %s %s\n",__DATE__,__TIME__);
     curl_global_init(CURL_GLOBAL_ALL);
 }
 

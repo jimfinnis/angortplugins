@@ -157,5 +157,6 @@ static ComplexType tC;
 
 %init
 {
-   fprintf(stderr,"Initialising COMPLEX plugin, %s %s\n",__DATE__,__TIME__);
+    if(showinit)
+        fprintf(stderr,"Initialising COMPLEX plugin, %s %s\n",__DATE__,__TIME__);
 }    

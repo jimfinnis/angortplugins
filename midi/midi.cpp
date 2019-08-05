@@ -405,7 +405,8 @@ static void stackPorts(Runtime *a,const char **q){
 
 %init
 {
-    fprintf(stderr,"Initialising Midi plugin, %s %s\n",__DATE__,__TIME__);
+    if(showinit)
+        fprintf(stderr,"Initialising Midi plugin, %s %s\n",__DATE__,__TIME__);
     
 }
 

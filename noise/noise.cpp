@@ -39,5 +39,6 @@ a time or spatial coordinate).
 
 %init
 {
-    fprintf(stderr,"Initialising NOISE plugin, %s %s\n",__DATE__,__TIME__);
+    if(showinit)
+        fprintf(stderr,"Initialising NOISE plugin, %s %s\n",__DATE__,__TIME__);
 }

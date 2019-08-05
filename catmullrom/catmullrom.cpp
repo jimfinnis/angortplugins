@@ -79,5 +79,6 @@ static SplineType tSpline;
 
 %init
 {
-    fprintf(stderr,"Initialising CATMULLROM plugin, %s %s\n",__DATE__,__TIME__);
+    if(showinit)
+        fprintf(stderr,"Initialising CATMULLROM plugin, %s %s\n",__DATE__,__TIME__);
 }    

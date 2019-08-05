@@ -80,5 +80,6 @@ void mapToHash(Hash *h,YAML::Node map){
 
 %init
 {
-    fprintf(stderr,"Initialising YAML plugin, %s %s\n",__DATE__,__TIME__);
+    if(showinit)
+        fprintf(stderr,"Initialising YAML plugin, %s %s\n",__DATE__,__TIME__);
 }

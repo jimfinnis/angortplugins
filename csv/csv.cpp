@@ -602,7 +602,8 @@ If "none" is given, all columns are printed in a random order.
 
 %init
 {
-    fprintf(stderr,"Initialising CSV plugin, %s %s\n",__DATE__,__TIME__);
+    if(showinit)
+        fprintf(stderr,"Initialising CSV plugin, %s %s\n",__DATE__,__TIME__);
     
     a->ang->registerProperty("outheaders",&outheaders,"csv");
 }
