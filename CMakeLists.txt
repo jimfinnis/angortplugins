@@ -79,6 +79,8 @@ if(SDL2_FOUND AND SDL2_IMG_FOUND AND SDL2_GFX_FOUND AND SDL2_TTF_FOUND)
 addeasy(sdl)
 target_link_libraries(sdl ${SDL2_LIBRARIES}
     ${SDL2_IMG_LIBRARIES} ${SDL2_GFX_LIBRARIES} ${SDL2_TTF_LIBRARIES})
+file(GLOB sdlutils "sdl/utils/*.ang")
+install(PROGRAMS ${sdlutils} DESTINATION "${INSTALLDIR}/sdlutils")
 endif(SDL2_FOUND AND SDL2_IMG_FOUND AND SDL2_GFX_FOUND AND SDL2_TTF_FOUND)
 
 find_package(Jack)

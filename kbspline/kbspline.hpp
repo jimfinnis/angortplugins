@@ -1,5 +1,5 @@
 /**
- * @file catmullrom.hpp
+ * @file 
  * @brief  Brief description of file.
  *
  */

@@ -520,7 +520,8 @@ BoolProperty outheaders(true);
 %wordargs out lv (csvhashlist ordering --) output CSV to stdout.
 The input is the loaded csv hashlist (from csv$read) and an optional list
 of symbols giving the columns and order in which they should be printed.
-If "none" is given, all columns are printed in a random order.
+If "none" is given, all columns are printed in a random order. If stdout
+isn't wanted, remember "redir" can be used.
 {
     ArrayList<const char *> headers;
     

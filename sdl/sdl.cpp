@@ -48,10 +48,24 @@ public:
     
     virtual void postSet(){
         ArrayList<Value> *list = Types::tList->get(&v);
-        col.r = list->get(0)->toInt();
-        col.g = list->get(1)->toInt();
-        col.b = list->get(2)->toInt();
-        col.a = list->get(3)->toInt();
+        switch(list->count()){
+        case 3:
+            col.r = list->get(0)->toInt();
+            col.g = list->get(1)->toInt();
+            col.b = list->get(2)->toInt();
+            col.a = 255;
+            break;
+        case 4:
+            col.r = list->get(0)->toInt();
+            col.g = list->get(1)->toInt();
+            col.b = list->get(2)->toInt();
+            col.a = list->get(3)->toInt();
+            break;
+        default:
+            throw RUNT(EX_BADPARAM,"Colour list must have 3 or 4 values");
+            
+        }
+        
     }
     
     virtual void preGet(){
@@ -277,7 +291,7 @@ static void openwindow(const char *title, int w,int h,int flags){
     }
     
     a->pushLong((long)v);
-              
+    
 }
 
 %word blit (dx dy dw/none dh/none surf --) basic texture blit
@@ -746,7 +760,6 @@ static void hat2xy(int code,int *x,int *y){
     Types::tInteger->set(list->append(),b);
     Types::tInteger->set(list->append(),p1);
 }
-    
 
 
 
@@ -761,6 +774,19 @@ static void hat2xy(int code,int *x,int *y){
     a->ang->registerProperty("bcol",&backcol,"sdl");
     a->ang->registerProperty("tcol",new TextureColProperty(a),"sdl");
     a->ang->registerProperty("talpha",new TextureAlphaProperty(a),"sdl");
+    
+    int idx = a->ang->names.create("sdl");
+    a->ang->names.push(idx);
+    a->ang->setGlobal("modshiftL",KMOD_LSHIFT);
+    a->ang->setGlobal("modshiftR",KMOD_RSHIFT);
+    a->ang->setGlobal("modctrlL",KMOD_LCTRL);
+    a->ang->setGlobal("modctrlR",KMOD_RCTRL);
+    a->ang->setGlobal("modaltL",KMOD_LALT);
+    a->ang->setGlobal("modaltR",KMOD_RALT);
+    a->ang->setGlobal("modshift",KMOD_SHIFT);
+    a->ang->setGlobal("modalt",KMOD_ALT);
+    a->ang->setGlobal("modctrl",KMOD_CTRL);
+    a->ang->names.pop();
 }
 
 
