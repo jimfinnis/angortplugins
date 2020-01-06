@@ -70,6 +70,7 @@ none!PrevState
 
 :isctrl sdl$keymod sdl$modctrl band ;
 :isshift sdl$keymod sdl$modshift band ;
+:isalt sdl$keymod sdl$modalt band ;
 :isnomod sdl$keymod 0 = ;
 
 private
@@ -97,8 +98,9 @@ private
     tostr
     # keyname is on the stack as a string, now add modifiers
     "" !mods
-    isshift if "S" ?mods + !mods then
     isctrl if "C" ?mods + !mods then
+    isshift if "S" ?mods + !mods then
+    isalt if "A" ?mods + !mods then
     ?mods "" != if
         ?mods "-" + swap +
     then
@@ -247,23 +249,36 @@ public
 
 # standard help state
 
-30!HelpLineSpacing
+30!HelpLineSpacingY
+500!HelpLineSpacingX
+
+10!HelpItemsPerColumn
+
 [%
  `name "help",
- `draw (|:y|
-     20!y
+ `draw (|:x,y,n,k,v|
+     0!x
+     10!y
      ?PrevState?`keys isnone if
          "No help in this state" 10 ?y drawtext
      else
-         ?PrevState?`keys each {
+         0!n
+         [] ?PrevState?`keys each{i,} dup !k sort
+         ?k each {
+             i ?PrevState?`keys get fst !v
+             ?n ?HelpItemsPerColumn = if
+                 0!n 0!y
+                 ?x ?HelpLineSpacingX+ !x
+             then
+             !+n
              cases
                  i 127 chr = if "del" case
                  i 27 chr = if "esc" case
                  i type `symbol = if i tostr case
                  i otherwise
-             10 ?y drawtext
-             ival fst 200 ?y drawtext
-             ?y ?HelpLineSpacing + !y
+             ?x 10 + ?y drawtext
+             ?v 200 ?x + ?y drawtext
+             ?y ?HelpLineSpacingY + !y
          }
      then
      
