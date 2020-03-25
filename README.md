@@ -11,7 +11,7 @@ Extra dependencies are (Ubuntu packages are given)
 * diamond: Diamond Apparatus (available from my Github repos)
 * sdl:  libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev libsdl2-gfx-dev
 * midi: libjack-jackd2-dev jac
-    
+* cv:   OpenCV2 with highgui
 
     
     
