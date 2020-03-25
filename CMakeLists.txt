@@ -130,6 +130,15 @@ target_compile_options(yaml PUBLIC ${YAML_CPP_CFLAGS})
 target_include_directories(yaml PUBLIC ${YAML_CPP_INCLUDE_DIRS})
 endif(YAML_CPP_FOUND)
 
+pkg_search_module(OPENCV opencv)
+if(OPENCV_FOUND)
+addeasy(cv)
+target_link_libraries(cv ${OPENCV_LIBRARIES})
+target_compile_options(cv PUBLIC ${OPENCV_CFLAGS})
+target_include_directories(cv PUBLIC ${OPENCV_INCLUDE_DIRS})
+endif(OPENCV_FOUND)
+
+
 
 
 ##################################################################
