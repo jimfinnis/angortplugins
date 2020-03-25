@@ -1,0 +1,46 @@
+[`time,`cv] each {i library drop}
+
+# open capture device 0 and store in C
+
+0 cv$opencap !C
+
+(
+    0!Done                  # terminate loop when this is nonzero
+    none!Timer              # no timer running
+    
+    # change the text printing properties
+    
+    10!cv$textsize
+    10!cv$textthickness
+    
+    "timercam" cv$window    # open a window named "timercam"
+    {
+        # capture an image in I
+        ?C cv$capture !I
+        # if the timer is running..
+        ?Timer isnone not if
+            # has the timer expired?
+            time$now ?Timer > if
+                # if so, write the image to a file
+                ?I "foo.png" cv$write
+                # and clear the timer
+                none!Timer
+            else
+                # otherwise, print the timer remaining time
+                # to the window
+                ?Timer time$now - toint tostr "centre" ?I cv$text
+            then
+        then
+        # show the image in the window
+        ?I "foo" cv$imshow
+        # and wait 20ms for a key (which will also actually show the window)
+        20 cv$waitkey chr <<[%
+                             # q sets the done flag
+                             "q" (1!Done),
+                             # w sets the timer to 20 secs from now
+                             "w" (time$now 20+ !Timer)
+                              ]>> get@
+        ?Done ifleave        # leave if Done is nonzero
+        
+    }
+)@ quit
