@@ -14,15 +14,14 @@ sdl$scrsize !W !H
     } !Words
 )@
 
-"/home/white/.fonts/"
-"BebasNeue.otf" 
-+ 200 sdl$openfont !Font
+
 160 !LINEHEIGHT
 4 !NUMWORDS
 
-"/home/white/.fonts/"
-"BebasNeue.otf" 
-+ 300 sdl$openfont !ClockFont
+"/home/white/.fonts/" !FONTDIR
+
+?FONTDIR "BebasNeue.otf" + 200 sdl$openfont !Font
+?FONTDIR "BebasNeue.otf" + 300 sdl$openfont !ClockFont
 
 none srand
 
