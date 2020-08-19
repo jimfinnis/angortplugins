@@ -44,7 +44,7 @@ find_library(DIAMOND_LIBRARIES diamondapparatus)
 find_path(DIAMOND_INCLUDE_DIRS diamondapparatus/diamondapparatus.h)
 if(DIAMOND_LIBRARIES AND DIAMOND_INCLUDE_DIRS)
 addeasy(diamond)
-target_link_libraries(diamond ${DIAMOND_LIBRARIES})
+target_link_libraries(diamond ${DIAMOND_LIBRARIES} pthread)
 target_include_directories(diamond PUBLIC ${DIAMOND_INCLUDE_DIRS})
 endif(DIAMOND_LIBRARIES AND DIAMOND_INCLUDE_DIRS)
 
